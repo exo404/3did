@@ -1,5 +1,189 @@
 # 3did
+```mermaid
+sequenceDiagram
+    participant H as Holder (Frontend)
+    participant HE as Holder Edge Backend
+    participant C as Cloud Layer
+    participant IE as Issuer Edge Backend
+    participant I as Issuer (Frontend)
+    participant BC as Blockchain (DID Layer)
 
+    Note over H, BC: 1. REGISTRAZIONE DID HOLDER
+
+    H->>HE: Richiesta creazione DID
+    HE->>HE: Genera coppia chiavi (Veramo)
+    HE->>BC: registerDID(did, didDocument)
+    BC-->>HE: DID registrato con successo
+    HE->>HE: Salva chiavi private localmente
+    HE-->>H: DID creato: did:ethr:0x123...
+
+    Note over H, BC: 2. RICHIESTA RILASCIO CREDENZIALE
+
+    H->>HE: Richiesta credenziale (es. identità)
+    HE->>C: DIDCOMM Message (credential-request)
+    Note right of C: Cloud routing del messaggio
+    C->>IE: Forward DIDCOMM message
+    IE-->>I: Notifica: Richiesta rilascio credenziale
+    I->>I: Review richiesta holder
+    
+    alt Richiesta approvata
+        I->>IE: Approva rilascio credenziale
+        IE->>BC: Verifica DID holder esistente
+        BC-->>IE: DID Document holder
+        IE->>IE: Crea Verifiable Credential (Veramo)
+        IE->>C: DIDCOMM Message (credential-offer)
+        C->>HE: Forward credential offer
+        HE-->>H: Notifica: Credenziale disponibile
+        H->>HE: Accetta credenziale
+        HE->>HE: Salva credenziale nel wallet
+        HE-->>H: Credenziale salvata con successo
+    else Richiesta rifiutata
+        I->>IE: Rifiuta richiesta
+        IE->>C: DIDCOMM Message (credential-reject)
+        C->>HE: Forward rejection
+        HE-->>H: Richiesta rifiutata
+    end
+
+```
+```mermaid
+sequenceDiagram
+    participant H as Holder (Frontend)
+    participant HE as Holder Edge Backend
+    participant C as Cloud Layer
+    participant VE as Verifier Edge Backend
+    participant V as Verifier (Frontend)
+    participant BC as Blockchain (DID Layer)
+
+    Note over H, BC: 3. VERIFICA CREDENZIALE (QR CODE)
+
+    V->>VE: Genera richiesta verifica
+    VE->>VE: Crea Presentation Request
+    VE->>V: Genera QR Code con richiesta
+    V->>V: Mostra QR Code
+    
+    H->>H: Scansiona QR Code
+    H->>HE: Processa richiesta verifica
+    HE->>HE: Analizza credenziali disponibili
+    HE-->>H: Mostra credenziali richieste
+    
+    alt Holder approva condivisione
+        H->>HE: Approva condivisione credenziali
+        HE->>BC: Verifica validità DID issuer
+        BC-->>HE: DID Document issuer
+        HE->>HE: Verifica firma credenziale
+        HE->>HE: Crea Verifiable Presentation
+        HE->>C: DIDCOMM Message (presentation-submission)
+        C->>VE: Forward presentation
+        VE->>BC: Verifica DID holder
+        BC-->>VE: DID Document holder
+        VE->>VE: Verifica Presentation e firme
+        VE-->>V: Verifica completata con successo
+        V->>V: Mostra risultato verifica
+        
+        Note right of VE: Opzionale: Log verifica
+        VE->>BC: Registra evento verifica (opzionale)
+    else Holder rifiuta condivisione
+        H->>HE: Rifiuta condivisione
+        HE-->>H: Verifica annullata
+    end
+
+```
+```mermaid
+sequenceDiagram
+    participant H as Holder (Frontend)
+    participant HE as Holder Edge Backend
+    participant C as Cloud Layer
+    participant IE as Issuer Edge Backend
+    participant I as Issuer (Frontend)
+    participant BC as Blockchain (DID Layer)
+
+    Note over H, BC: 4. REVOCA CREDENZIALE
+
+    I->>IE: Richiesta revoca credenziale
+    IE->>BC: Verifica proprietà credenziale
+    BC-->>IE: Conferma proprietà
+    IE->>BC: addToRevocationList(credentialId)
+    BC-->>IE: Credenziale revocata
+    IE->>C: DIDCOMM Message (credential-revoked)
+    C->>HE: Forward revocation notice
+    HE->>HE: Marca credenziale come revocata
+    HE-->>H: Notifica: Credenziale revocata
+
+```
+```mermaid
+sequenceDiagram
+    participant HF as Holder Frontend
+    participant HE as Holder Edge Backend
+    participant C as Cloud Layer
+    participant IF as Issuer Frontend
+    participant IE as Issuer Edge Backend
+    participant BC as Blockchain
+
+    Note over HF, BC: 5. SETUP INIZIALE SISTEMA
+
+    Note left of HF: Primo avvio Holder
+    HF->>HE: Inizializza wallet
+    HE->>HE: Configura Veramo Agent
+    HE->>HE: Crea database locale credenziali
+    HE->>C: Registra endpoint per messaggi
+    C-->>HE: Endpoint registrato
+    
+    Note left of IF: Primo avvio Issuer  
+    IF->>IE: Inizializza sistema issuer
+    IE->>IE: Configura Veramo Agent
+    IE->>BC: Registra DID issuer
+    BC-->>IE: DID issuer registrato
+    IE->>C: Registra endpoint per messaggi
+    C-->>IE: Endpoint registrato
+
+```
+```mermaid
+sequenceDiagram
+    participant App as Mobile/Web App
+    participant Edge as Edge Backend
+    participant Cloud as Cloud Layer
+    participant BC as Blockchain
+    participant Veramo as Veramo Agent
+
+    Note over App, Veramo: 6. FLUSSO MESSAGGI DIDCOMM ASINCRONI
+
+    App->>Edge: Utente offline
+    Note right of Edge: Messaggi in arrivo durante offline
+    
+    Cloud->>Cloud: Riceve messaggio per utente offline
+    Cloud->>Cloud: Bufferizza messaggio in coda
+    
+    App->>Edge: Utente torna online
+    Edge->>Cloud: Polling per nuovi messaggi
+    Cloud-->>Edge: Restituisce messaggi in coda
+    Edge->>Veramo: Processa messaggi DIDCOMM
+    Veramo-->>Edge: Messaggi processati
+    Edge-->>App: Notifiche aggiornate
+
+```
+```mermaid
+sequenceDiagram
+    participant F as Frontend (Scaffold-ETH)
+    participant W as Wagmi/Viem
+    participant BC as Blockchain
+    participant V as Veramo Agent
+    participant E as Edge Backend
+
+    Note over F, E: 7. INTEGRAZIONE SCAFFOLD-ETH + VERAMO
+
+    F->>W: useContractRead(DIDRegistry.resolve)
+    W->>BC: Query DID Document
+    BC-->>W: DID Document data
+    W-->>F: DID resolved
+    
+    F->>E: API call per credenziali
+    E->>V: Query local credentials
+    V-->>E: Credentials data
+    E-->>F: Credentials list
+    
+    F->>F: Combina dati blockchain + credenziali locali
+    F->>F: Render UI componenti SSI
+```
 # 🏗 Scaffold-ETH 2
 
 <h4 align="center">
