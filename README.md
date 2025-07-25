@@ -90,55 +90,6 @@ sequenceDiagram
 ```
 ```mermaid
 sequenceDiagram
-    participant H as Holder (Frontend)
-    participant HE as Holder Edge Backend
-    participant C as Cloud Layer
-    participant IE as Issuer Edge Backend
-    participant I as Issuer (Frontend)
-    participant BC as Blockchain (DID Layer)
-
-    Note over H, BC: 4. REVOCA CREDENZIALE
-
-    I->>IE: Richiesta revoca credenziale
-    IE->>BC: Verifica proprietà credenziale
-    BC-->>IE: Conferma proprietà
-    IE->>BC: addToRevocationList(credentialId)
-    BC-->>IE: Credenziale revocata
-    IE->>C: DIDCOMM Message (credential-revoked)
-    C->>HE: Forward revocation notice
-    HE->>HE: Marca credenziale come revocata
-    HE-->>H: Notifica: Credenziale revocata
-
-```
-```mermaid
-sequenceDiagram
-    participant HF as Holder Frontend
-    participant HE as Holder Edge Backend
-    participant C as Cloud Layer
-    participant IF as Issuer Frontend
-    participant IE as Issuer Edge Backend
-    participant BC as Blockchain
-
-    Note over HF, BC: 5. SETUP INIZIALE SISTEMA
-
-    Note left of HF: Primo avvio Holder
-    HF->>HE: Inizializza wallet
-    HE->>HE: Configura Veramo Agent
-    HE->>HE: Crea database locale credenziali
-    HE->>C: Registra endpoint per messaggi
-    C-->>HE: Endpoint registrato
-    
-    Note left of IF: Primo avvio Issuer  
-    IF->>IE: Inizializza sistema issuer
-    IE->>IE: Configura Veramo Agent
-    IE->>BC: Registra DID issuer
-    BC-->>IE: DID issuer registrato
-    IE->>C: Registra endpoint per messaggi
-    C-->>IE: Endpoint registrato
-
-```
-```mermaid
-sequenceDiagram
     participant App as Mobile/Web App
     participant Edge as Edge Backend
     participant Cloud as Cloud Layer
@@ -160,29 +111,6 @@ sequenceDiagram
     Veramo-->>Edge: Messaggi processati
     Edge-->>App: Notifiche aggiornate
 
-```
-```mermaid
-sequenceDiagram
-    participant F as Frontend (Scaffold-ETH)
-    participant W as Wagmi/Viem
-    participant BC as Blockchain
-    participant V as Veramo Agent
-    participant E as Edge Backend
-
-    Note over F, E: 7. INTEGRAZIONE SCAFFOLD-ETH + VERAMO
-
-    F->>W: useContractRead(DIDRegistry.resolve)
-    W->>BC: Query DID Document
-    BC-->>W: DID Document data
-    W-->>F: DID resolved
-    
-    F->>E: API call per credenziali
-    E->>V: Query local credentials
-    V-->>E: Credentials data
-    E-->>F: Credentials list
-    
-    F->>F: Combina dati blockchain + credenziali locali
-    F->>F: Render UI componenti SSI
 ```
 # 🏗 Scaffold-ETH 2
 
