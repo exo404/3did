@@ -35,7 +35,10 @@
     "usehooks-ts": "~3.1.0",
     "viem": "2.31.1",
     "wagmi": "2.15.6",
-    "zustand": "~5.0.0"
+    "zustand": "~5.0.0",
+    "axios": "^1.6.0",
+    "qr-scanner": "^1.4.2",
+    "html5-qrcode": "^2.3.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.0.15",

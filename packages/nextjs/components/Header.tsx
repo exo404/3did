@@ -21,6 +21,11 @@ export const menuLinks: HeaderMenuLink[] = [
     href: "/",
   },
   {
+    label: "DID Wallet",
+    href: "/did-wallet",
+    icon: <span className="text-lg">🆔</span>,
+  },
+  {
     label: "Debug Contracts",
     href: "/debug",
     icon: <BugAntIcon className="h-4 w-4" />,
