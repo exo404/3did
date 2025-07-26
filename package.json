@@ -1,0 +1,33 @@
+{
+  "name": "3did",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/exo404/3did.git",
+  "author": "exo404 <albertopetillo@hotmail.it>",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@veramo/core": "^6.0.0",
+    "@veramo/credential-w3c": "^6.0.0",
+    "@veramo/data-store": "^6.0.0",
+    "@veramo/did-comm": "^6.0.0",
+    "@veramo/did-jwt": "^6.0.0",
+    "@veramo/did-manager": "^6.0.0",
+    "@veramo/did-provider-ethr": "^6.0.0",
+    "@veramo/did-resolver": "^6.0.0",
+    "@veramo/key-manager": "^6.0.0",
+    "@veramo/kms-local": "^6.0.0",
+    "@veramo/message-handler": "^6.0.0",
+    "@veramo/remote-client": "^6.0.0",
+    "@veramo/remote-server": "^6.0.0",
+    "@veramo/selective-disclosure": "^6.0.0",
+    "@veramo/url-handler": "^6.0.0",
+    "ethr-did-resolver": "^11.0.4",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.25"
+  }
+}
