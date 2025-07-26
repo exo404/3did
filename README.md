@@ -32,3 +32,6 @@ yarn add sqlite3 typeorm
 ```bash
 npx @veramo/cli config create-secret-key
 ```
+
+## Diagrammi di sequenza
+<img width="682" height="1334" alt="image" src="https://github.com/user-attachments/assets/b5243968-277a-441d-82d4-3893fad85436" />
