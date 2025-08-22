@@ -4,7 +4,7 @@
 
 ### Inizializzazione con yarn
 ```bash
-mkdir 3did && cd veramo-agent
+mkdir 3did && cd 3did
 yarn init -y
 ```
 
@@ -25,7 +25,7 @@ yarn add @veramo/core @veramo/data-store ethr-did-resolver @veramo/did-manager @
 
 ### Installare sqlite:
 ```bash
-yarn add sqlite3 typeorm
+yarn add sqlite3 typeorm reflect-metadata
 ```
 
 ### Generare e salvare la chiave segreta:
