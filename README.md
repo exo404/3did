@@ -23,7 +23,7 @@ yarn add @veramo/core @veramo/data-store ethr-did-resolver @veramo/did-manager @
 
 ```
 
-### Installare sqllite:
+### Installare sqlite:
 ```bash
 yarn add sqlite3 typeorm
 ```
