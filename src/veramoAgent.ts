@@ -21,16 +21,17 @@ import { CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
 
 const infuraProjectId = '0bcd0c43968945b983ce0346fc4a9416'
 const secretKey = 'fbd38fab6ff2517135a414e6bad89c321958be2a2beedf5651135e39623dc058'
-const dbConnection = new DataSource({
+const dbConnection = await new DataSource({
     type: 'sqlite',
-    database: 'database.sql',
+    database: 'database.sqlite',
     synchronize: false,
     migrations,
     migrationsRun: true,
     logging: false,
+    entities: Entities,
   }).initialize()
 
-const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IDataStoreORM & IResolver &IMessageHandler 
+export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IDataStoreORM & IResolver &IMessageHandler 
                             & IDIDComm & ICredentialPlugin & ISelectiveDisclosure & IDIDDiscovery>
 ({
     plugins: [

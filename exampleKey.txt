@@ -1,6 +1,0 @@
-X25519 raw private key (hex encoded):
-
-fbd38fab6ff2517135a414e6bad89c321958be2a2beedf5651135e39623dc058
-
-You can use this key with @veramo/kms-local#SecretBox
-or replace the default agent.yml 'dbEncryptionKey' constant
