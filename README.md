@@ -33,5 +33,10 @@ yarn add sqlite3 typeorm
 npx @veramo/cli config create-secret-key
 ```
 
+### Avvio servizi
+```bash
+node --loader ts-node/esm ./src/YOUR_TEST.ts
+```
+
 ## Diagrammi di sequenza
 <img width="682" height="1334" alt="image" src="https://github.com/user-attachments/assets/b5243968-277a-441d-82d4-3893fad85436" />
