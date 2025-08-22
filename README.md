@@ -4,7 +4,7 @@
 
 ### Inizializzazione con yarn
 ```bash
-mkdir 3did && cd veramo-agent
+mkdir 3did && cd 3did
 yarn init -y
 ```
 
