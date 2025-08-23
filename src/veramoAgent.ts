@@ -17,7 +17,7 @@ import { Resolver } from 'did-resolver'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
 import { MessageHandler } from "@veramo/message-handler"
 import { JwtMessageHandler } from "@veramo/did-jwt"
-import { CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
+import { CredentialIssuer, CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
 
 const infuraProjectId = '0bcd0c43968945b983ce0346fc4a9416'
 const secretKey = 'fbd38fab6ff2517135a414e6bad89c321958be2a2beedf5651135e39623dc058'
@@ -70,6 +70,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
         }),
         new DIDComm({ transports: [new DIDCommHttpTransport()] }),
         new CredentialPlugin(),
+        new CredentialIssuer(),
         new SelectiveDisclosure(),
         new DIDDiscovery({
             providers: [

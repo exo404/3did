@@ -23,9 +23,14 @@ yarn add @veramo/core @veramo/data-store ethr-did-resolver @veramo/did-manager @
 
 ```
 
-### Install sqlite:
+### Install sqlite and typeorm:
 ```bash
 yarn add sqlite3 typeorm reflect-metadata
+```
+
+### Install express:
+```bash
+yarn add express
 ```
 
 ### Create and save the secret key:
