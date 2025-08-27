@@ -6,7 +6,7 @@ import { ethers } from 'ethers'
 
 const aliasServer = 'default'
 const aliasSender = 'test-sender9'
-const ServerDID = 'did:ethr:sepolia:0x035f3fd0cbb46d747c8e810fa371b4dd1f5e68d7dd035cfc0bbde2ea9e63e939e6'
+const serverDID = 'did:ethr:sepolia:0x035f3fd0cbb46d747c8e810fa371b4dd1f5e68d7dd035cfc0bbde2ea9e63e939e6'
 const senderDID = 'did:ethr:sepolia:0x029741c1ed91433bf5db3702f15d5a71f8e229851b196c3d7088060e956776c537'
 
 
@@ -51,4 +51,3 @@ export async function findDIDAddress(alias: string) {
 }
 await testV1()
 await findDIDAddress(aliasServer)
-

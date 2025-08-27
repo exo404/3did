@@ -86,8 +86,10 @@ export class DIDCommManager {
       // Creo e impacchetto il messaggio
       const packedMessage = await this.createMessage(recipientDID, messageType, body)
       
-      // Invio il messaggio usando il transport HTTP configurato
-       const response = await fetch('http://localhost:3000/messaging', {
+      // Invio il messaggio al service endpoint nel DIDDocument
+      const identifier = await agent.didManagerGet({ did: recipientDID})
+      const url = identifier.services[0].serviceEndpoint as string
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: packedMessage.message })

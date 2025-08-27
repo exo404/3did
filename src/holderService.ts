@@ -2,6 +2,8 @@ import { IIdentifier } from '@veramo/core'
 import { agent } from './veramoAgent.js'
 
 export async function createDID(alias : string) : Promise<IIdentifier> {
+
+  //Creo la chiave per comunicazione DIDCOMM (criptare)
   const newKey = await agent.keyManagerCreate({
     kms: 'local',
     type: 'X25519',
