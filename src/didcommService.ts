@@ -55,7 +55,7 @@ export class DIDCommManager {
       const message: IDIDCommMessage = {
         type: messageType,
         from: this.myDID,
-        to: [...recipientDID],
+        to: [recipientDID],
         id: `${Date.now()}-${Math.random()}`,
         created_time: `${Math.floor(Date.now() / 1000)}`,
         body: body
@@ -63,7 +63,7 @@ export class DIDCommManager {
 
       // Impacchetta il messaggio (con crittografia)
       const packedMessage = await agent.packDIDCommMessage({
-        packing: 'authcrypt', // o 'anoncrypt' per anonimato
+        packing: 'anoncrypt', // o 'authcrypt'
         message: message
       })
 
@@ -87,15 +87,12 @@ export class DIDCommManager {
       const packedMessage = await this.createMessage(recipientDID, messageType, body)
       
       // Invio il messaggio usando il transport HTTP configurato
-      const result = await agent.sendDIDCommMessage({
-        packedMessage,
-        recipientDidUrl: recipientDID,
-        messageId: packedMessage.message,
-        returnTransportId: 'http'
+       const response = await fetch('http://localhost:3000/messaging', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: packedMessage.message })
       })
-
-      console.log(`Messaggio inviato a ${recipientDID}`)
-      return result
+      return await response.json()
       
     } catch (error) {
       console.error('Errore nell\'invio del messaggio:', error)
@@ -119,7 +116,7 @@ export class DIDCommManager {
       await agent.dataStoreSaveMessage({
         message: {
           ...unpackedMessage.message,
-          to: Array.isArray(unpackedMessage.message.to) ? unpackedMessage.message.to[0] : unpackedMessage.message.to
+          to: Array.isArray(unpackedMessage.message.to) ? unpackedMessage.message.to[0] : unpackedMessage.message.to,
         }
       })
 

@@ -21,7 +21,9 @@ app.post('/messaging', async (req, res) => {
       ? req.body 
       : JSON.stringify(req.body)
     
-    // TBD: Processa il messaggio ricevuto
+    //Processo il messaggio ricevuto
+    const unpackedMessage = await didcommManager.receiveMessage(req.body);
+    console.log(unpackedMessage.body)
     
     res.status(200).json({ 
       status: 'success',
