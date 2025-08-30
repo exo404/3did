@@ -17,10 +17,10 @@ import { Resolver } from 'did-resolver'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
 import { MessageHandler } from "@veramo/message-handler"
 import { JwtMessageHandler } from "@veramo/did-jwt"
-import { CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
+import { CredentialIssuer, CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
 
-const infuraProjectId = '0bcd0c43968945b983ce0346fc4a9416'
-const secretKey = 'fbd38fab6ff2517135a414e6bad89c321958be2a2beedf5651135e39623dc058'
+const infuraProjectId = process.env.INFURA_PROJECT_ID  
+const secretKey = process.env.API_SECRET_KEY
 const dbConnection = await new DataSource({
     type: 'sqlite',
     database: 'database.sqlite',
@@ -44,18 +44,43 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
         }),
         new DIDManager({
             store: new DIDStore(dbConnection),
-            defaultProvider : 'did:ethr:sepolia',
+            defaultProvider: 'did:ethr:sepolia',
             providers: {
                 'did:ethr:sepolia': new EthrDIDProvider({
-                    network: 'sepolia',
                     defaultKms: 'local',
-                    rpcUrl: `https://sepolia.infura.io/v3/${infuraProjectId}`,
-                })
+                    network: 'sepolia',
+                    rpcUrl: 'https://sepolia.infura.io/v3/' + infuraProjectId,
+                    registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818', 
+                    ttl: 60 * 60 * 24 * 30 * 12 + 1,
+                }),
+                'did:ethr': new EthrDIDProvider({
+                    defaultKms: 'local',
+                    network: 'mainnet',
+                    rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
+                    registry: '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b', 
+                    ttl: 60 * 60 * 24 * 30 * 12 + 1,
+                }),
             }
         }),
         new DIDResolverPlugin({
             resolver: new Resolver({
-                ...ethrDidResolver({infuraProjectId: infuraProjectId})
+                ...ethrDidResolver({
+                    infuraProjectId: infuraProjectId,
+                    networks: [
+                        { 
+                            name: 'mainnet', 
+                            chainId: 1, 
+                            rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
+                            registry: '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b'
+                        },
+                        { 
+                            name: 'sepolia', 
+                            chainId: 11155111, 
+                            rpcUrl: 'https://sepolia.infura.io/v3/' + infuraProjectId,
+                            registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818'
+                        },
+                    ]
+                })
             })
         }),
         new DataStore(dbConnection),
@@ -70,6 +95,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
         }),
         new DIDComm({ transports: [new DIDCommHttpTransport()] }),
         new CredentialPlugin(),
+        new CredentialIssuer(),
         new SelectiveDisclosure(),
         new DIDDiscovery({
             providers: [
