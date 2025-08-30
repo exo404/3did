@@ -19,8 +19,8 @@ import { MessageHandler } from "@veramo/message-handler"
 import { JwtMessageHandler } from "@veramo/did-jwt"
 import { CredentialIssuer, CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
 
-const infuraProjectId = '0bcd0c43968945b983ce0346fc4a9416'
-const secretKey = 'fbd38fab6ff2517135a414e6bad89c321958be2a2beedf5651135e39623dc058'
+const infuraProjectId = process.env.INFURA_PROJECT_ID  
+const secretKey = process.env.API_SECRET_KEY
 const dbConnection = await new DataSource({
     type: 'sqlite',
     database: 'database.sqlite',
