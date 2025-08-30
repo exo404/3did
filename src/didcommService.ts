@@ -1,9 +1,20 @@
 import { agent } from './veramoAgent.js' 
-import { IDIDCommMessage, IPackedDIDCommMessage, DIDCommMessageMediaType} from '@veramo/did-comm'
+import { IDIDCommMessage, IPackedDIDCommMessage, DIDCommMessageMediaType, UpdateAction} from '@veramo/did-comm'
+import {
+  CoordinateMediation,
+  createV3DeliveryRequestMessage,
+  createV3MediateRequestMessage,
+  createV3RecipientQueryMessage,
+  createV3RecipientUpdateMessage,
+} from '@veramo/did-comm'
+import { v4 as uuidv4 } from 'uuid'
+import { createDID } from './holderService.js'
+
 
 export class DIDCommManager {
   private myDID: string = ''
-  async initialize(alias: string = 'default'): Promise<void> {
+  private mediatorDID: string = ''
+  async initialize(alias: string = 'default', mediatorDID? : string): Promise<void> {
     try {
       // Verifico se esiste già un DID con questo alias
       const identifiers = await agent.didManagerFind({ alias })
@@ -13,12 +24,16 @@ export class DIDCommManager {
         console.log(`DID esistente recuperato`)
       } 
       else{
-        console.log(`DID non trovato}`)
+        console.log(`DID non trovato, creazione in corso...`)
+        this.myDID = (await createDID(alias)).did
+        console.log(`DID creato: ${this.myDID}`)
       }
-      
-      // Aggiungo un service endpoint per DIDComm se non esiste
-      await this.setupDIDCommService()
-      
+      if (mediatorDID) {
+        this.mediatorDID = mediatorDID
+        console.log(`Mediatore impostato: ${this.mediatorDID}`)
+      } else {
+        console.log('Nessun mediatore fornito, alcune funzionalità potrebbero non essere disponibili.')
+      }
     } catch (error) {
       console.error('Errore durante l\'inizializzazione:', error)
       throw error
@@ -26,16 +41,16 @@ export class DIDCommManager {
   }
 
   //Configuro il service endpoint per DIDComm
-  private async setupDIDCommService(): Promise<void> {
+  private async setupDIDCommService(endpoint : string, type : string, id : string, description : string): Promise<void> {
     try {
       // Aggiungo il service endpoint per ricevere messaggi DIDComm
       await agent.didManagerAddService({
         did: this.myDID,
         service: {
-          id: `${this.myDID}#didcomm`,
-          type: 'DIDCommMessaging',
-          serviceEndpoint: 'http://localhost:3000/messaging', // endpoint configurato
-          description: 'Handles DIDComm Messages'
+          id: `${this.myDID}{id}`,
+          type: type,
+          serviceEndpoint: endpoint, // endpoint configurato
+          description: description,
         }
       })
       console.log('Service endpoint DIDComm configurato')
@@ -44,89 +59,180 @@ export class DIDCommManager {
     }
   }
 
-  //Crea e impacchetta un messaggio DIDComm
-  async createMessage(
-    recipientDID: string,
-    messageType: string,
-    body: any
-  ): Promise<IPackedDIDCommMessage> {
+  //Invia un messaggio DIDComm a un altro agente
+  async sendMessage(senderDID: string, recipientDID: string, body: any): Promise<any> {
     try {
-      // Crea il messaggio DIDComm
-      const message: IDIDCommMessage = {
-        type: messageType,
-        from: this.myDID,
+      const messageType = 'https://didcomm.org/basicmessage/2.0/message'
+      // Creo e impacchetto il messaggio
+      const message = {
+        type: 'https://didcomm.org/basicmessage/2.0/message',
+        from: senderDID,
         to: [recipientDID],
-        id: `${Date.now()}-${Math.random()}`,
-        created_time: `${Math.floor(Date.now() / 1000)}`,
-        body: body
+        id: uuidv4(),
+        body: body,
       }
 
-      // Impacchetta il messaggio (con crittografia)
       const packedMessage = await agent.packDIDCommMessage({
-        packing: 'anoncrypt', // o 'authcrypt'
-        message: message
+        packing: 'authcrypt',
+        message,
       })
-
-      console.log(`Messaggio impacchettato per ${recipientDID}`)
-      return packedMessage
       
-    } catch (error) {
-      console.error('Errore nella creazione del messaggio:', error)
-      throw error
+      if (packedMessage) {
+        await agent.sendDIDCommMessage({
+          messageId: uuidv4(),
+          packedMessage,
+          recipientDidUrl: recipientDID,
+        })
+      }
     }
-  }
-
-  //Invia un messaggio DIDComm a un altro agente
-  async sendMessage(
-    recipientDID: string,
-    messageType: string,
-    body: any
-  ): Promise<any> {
-    try {
-      // Creo e impacchetto il messaggio
-      const packedMessage = await this.createMessage(recipientDID, messageType, body)
-      
-      // Invio il messaggio al service endpoint nel DIDDocument
-      const identifier = await agent.didManagerGet({ did: recipientDID})
-      const url = identifier.services[0].serviceEndpoint as string
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: packedMessage.message })
-      })
-      return await response.json()
-      
-    } catch (error) {
+    catch (error) {
       console.error('Errore nell\'invio del messaggio:', error)
       throw error
     }
   }
 
-  //Spacchetta e processa un messaggio DIDComm ricevuto
-  async receiveMessage(packedMessage: IPackedDIDCommMessage): Promise<IDIDCommMessage> {
+  async receiveMessages (did: string, mediatorDID: string) : Promise<any[]> {
+    const deliveryRequest = createV3DeliveryRequestMessage(did, mediatorDID)
+    deliveryRequest.body = { limit: 100 } // Configurabile
+
+    const packedRequest = await agent.packDIDCommMessage({
+      packing: 'authcrypt',
+      message: deliveryRequest,
+    })
+
+    const deliveryResponse = await agent.sendDIDCommMessage({
+      packedMessage: packedRequest,
+      recipientDidUrl: mediatorDID,
+      messageId: deliveryRequest.id,
+    })
+
+    const messages = []
+    for (const attachment of deliveryResponse?.returnMessage?.attachments ?? []) {
+      const msg = await agent.handleMessage({
+        raw: JSON.stringify(attachment.data.json),
+      })
+      messages.push({ message_id: attachment.id, ...msg.data })
+    }
+  return messages
+}
+
+async markMessageAsRead (did: any, mediatorDID : string, messageIdList: string[]): Promise<void> {
+  const MESSAGES_RECEIVED_MESSAGE_TYPE = 'https://didcomm.org/messagepickup/3.0/messages-received'
+
+  const messagesRequestMessage = {
+    id: uuidv4(),
+    type: MESSAGES_RECEIVED_MESSAGE_TYPE,
+    to: [mediatorDID],
+    from: did,
+    return_route: 'all',
+    body: {
+      message_id_list: messageIdList,
+    },
+  }
+
+  const packedMessage = await agent.packDIDCommMessage({
+    packing: 'authcrypt',
+    message: messagesRequestMessage,
+  })
+
+  await agent.sendDIDCommMessage({
+    messageId: messagesRequestMessage.id,
+    packedMessage,
+    recipientDidUrl: mediatorDID,
+  })
+}
+
+  async createMediatorConnection (recipientDID: any) {
     try {
-      // Spacchetto il messaggio
-      const unpackedMessage = await agent.unpackDIDCommMessage({
-        message: packedMessage.message
+      // Crea richiesta di mediazione
+      const mediateRequestMessage = createV3MediateRequestMessage(recipientDID, this.mediatorDID)
+
+      const packedMessage = await agent.packDIDCommMessage({
+        packing: 'authcrypt',
+        message: mediateRequestMessage,
       })
 
-      console.log(` Messaggio ricevuto da: ${unpackedMessage.message.from}`)
-      console.log(`Tipo messaggio: ${unpackedMessage.message.type}`)
-      console.log(`Contenuto:`, unpackedMessage.message.body)
-
-      // Salvo il messaggio nel data store
-      await agent.dataStoreSaveMessage({
-        message: {
-          ...unpackedMessage.message,
-          to: Array.isArray(unpackedMessage.message.to) ? unpackedMessage.message.to[0] : unpackedMessage.message.to,
-        }
+      const sentMessage = await agent.sendDIDCommMessage({
+        messageId: mediateRequestMessage.id,
+        packedMessage,
+        recipientDidUrl: this.mediatorDID,
       })
 
-      return unpackedMessage.message
-      
-    } catch (error) {
-      console.error('Errore nella ricezione del messaggio:', error)
-      throw error
+      // Aggiorna il destinatario con il mediatore
+      const update = createV3RecipientUpdateMessage(recipientDID, this.mediatorDID, [
+        {
+          recipient_did: recipientDID,
+          action: UpdateAction.ADD,
+        },
+      ])
+
+      const packedUpdate = await agent.packDIDCommMessage({
+        packing: 'authcrypt',
+        message: update,
+      })
+      const updateResponse = await agent.sendDIDCommMessage({
+        packedMessage: packedUpdate,
+        recipientDidUrl: this.mediatorDID,
+        messageId: update.id,
+      })
+
+      const query = createV3RecipientQueryMessage(recipientDID, this.mediatorDID)
+
+      const packedQuery = await agent.packDIDCommMessage({
+        packing: 'authcrypt',
+        message: query,
+      })
+      const queryResponse = await agent.sendDIDCommMessage({
+        packedMessage: packedQuery,
+        recipientDidUrl: this.mediatorDID,
+        messageId: query.id,
+      })
+
+      console.log('queryResponse', queryResponse)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+  async ensureMediationGranted (recipientDID: string) {
+    const request = createV3MediateRequestMessage(recipientDID, this.mediatorDID)
+    const packedRequest = await agent.packDIDCommMessage({
+      packing: 'authcrypt',
+      message: request,
+    })
+    const mediationResponse = await agent.sendDIDCommMessage({
+      packedMessage: packedRequest,
+      recipientDidUrl: this.mediatorDID,
+      messageId: request.id,
+    })
+
+    if (mediationResponse.returnMessage?.type !== CoordinateMediation.MEDIATE_GRANT) {
+      throw new Error('mediation not granted')
+    }
+    const update = createV3RecipientUpdateMessage(recipientDID, this.mediatorDID, [
+      {
+        recipient_did: recipientDID,
+        action: UpdateAction.ADD,
+      },
+    ])
+    const packedUpdate = await agent.packDIDCommMessage({
+      packing: 'authcrypt',
+      message: update,
+    })
+    const updateResponse = await agent.sendDIDCommMessage({
+      packedMessage: packedUpdate,
+      recipientDidUrl: this.mediatorDID,
+      messageId: update.id,
+    })
+
+    if (
+      updateResponse.returnMessage?.type !== CoordinateMediation.RECIPIENT_UPDATE_RESPONSE ||
+      (updateResponse.returnMessage?.data && 
+      'updates' in updateResponse.returnMessage.data &&
+      Array.isArray(updateResponse.returnMessage.data.updates) &&
+      updateResponse.returnMessage.data.updates[0]?.result !== 'success')
+    )
+    {
+      throw new Error('mediation update failed')
     }
   }
 
