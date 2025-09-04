@@ -1,5 +1,5 @@
-import { agent } from './veramoAgent.js'
-import { credential } from './testCredential.js'
+import { agent } from '../veramoAgent.js'
+import { credential } from '../../test/testCredential.js'
 
 export async function verifyVC() {
   const result = await agent.verifyCredential({

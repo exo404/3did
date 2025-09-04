@@ -19,20 +19,80 @@ import { MessageHandler } from "@veramo/message-handler"
 import { JwtMessageHandler } from "@veramo/did-jwt"
 import { CredentialIssuer, CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
 
+import { IMediationManager, MediationManagerPlugin, PreMediationRequestPolicy, MediationResponse, RequesterDid } from '@veramo/mediation-manager'
+import { KeyValueStore, KeyValueTypeORMStoreAdapter, Entities as KVStoreEntities, kvStoreMigrations} from '@veramo/kv-store'
+import {CoordinateMediationV3MediatorMessageHandler, CoordinateMediationV3RecipientMessageHandler} from '@veramo/did-comm'
+
+import dotenv from 'dotenv'
+dotenv.config()
+
+//// TIPI ENUM ////
+
+// Tipo dei DIDCommV2
+export const DIDCommV2MessageType = 'https://didcomm.org/basicmessage/2.0/message'
+
+// Tipi per Coordinate Mediation v3
+export enum CoordinateMediation {
+  MEDIATE_REQUEST = 'https://didcomm.org/coordinate-mediation/3.0/mediate-request',
+  MEDIATE_GRANT = 'https://didcomm.org/coordinate-mediation/3.0/mediate-grant',
+  MEDIATE_DENY = 'https://didcomm.org/coordinate-mediation/3.0/mediate-deny',
+  RECIPIENT_UPDATE = 'https://didcomm.org/coordinate-mediation/3.0/recipient-update',
+  RECIPIENT_UPDATE_RESPONSE = 'https://didcomm.org/coordinate-mediation/3.0/recipient-update-response',
+  RECIPIENT_QUERY = 'https://didcomm.org/coordinate-mediation/3.0/recipient-query',
+  RECIPIENT_QUERY_RESPONSE = 'https://didcomm.org/coordinate-mediation/3.0/recipient-query-response'
+}
+// Tipi per Message Pickup v3
+export enum MessagePickup {
+  STATUS_REQUEST = 'https://didcomm.org/messagepickup/3.0/status-request',
+  STATUS = 'https://didcomm.org/messagepickup/3.0/status',
+  DELIVERY_REQUEST = 'https://didcomm.org/messagepickup/3.0/delivery-request',
+  DELIVERY = 'https://didcomm.org/messagepickup/3.0/delivery',
+  MESSAGES_RECEIVED = 'https://didcomm.org/messagepickup/3.0/messages-received',
+  LIVE_DELIVERY_CHANGE = 'https://didcomm.org/messagepickup/3.0/live-delivery-change'
+}
+
+/// CONFIGURAZIONE AGENTE ///
+
 const infuraProjectId = process.env.INFURA_PROJECT_ID  
 const secretKey = process.env.API_SECRET_KEY
 const dbConnection = await new DataSource({
     type: 'sqlite',
     database: 'database.sqlite',
     synchronize: false,
-    migrations,
+    migrations: [...migrations, ...kvStoreMigrations],
     migrationsRun: true,
     logging: false,
-    entities: Entities,
+    entities: [...Entities, ...KVStoreEntities],
   }).initialize()
 
+// Configuro gli store per la mediazione
+const policyStore = new KeyValueStore<PreMediationRequestPolicy>({
+    namespace: 'mediation_policy',
+    store: new KeyValueTypeORMStoreAdapter({ 
+    dbConnection: dbConnection, 
+    namespace: 'mediation_policy',
+    }),
+})
+
+const mediationStore = new KeyValueStore<MediationResponse>({
+    namespace: 'mediation_response',
+    store: new KeyValueTypeORMStoreAdapter({ 
+    dbConnection: dbConnection, 
+    namespace: 'mediation_response' 
+    }),
+})
+
+const recipientDidStore = new KeyValueStore<RequesterDid>({
+    namespace: 'recipient_did',
+    store: new KeyValueTypeORMStoreAdapter({ 
+    dbConnection: dbConnection, 
+    namespace: 'recipient_did' 
+    }),
+})
+
+
 export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IDataStoreORM & IResolver &IMessageHandler 
-                            & IDIDComm & ICredentialPlugin & ISelectiveDisclosure & IDIDDiscovery>
+                            & IDIDComm & ICredentialPlugin & ISelectiveDisclosure & IDIDDiscovery & IMediationManager>
 ({
     plugins: [
         new KeyManager({
@@ -91,6 +151,8 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
             new JwtMessageHandler(),
             new W3cMessageHandler(),
             new SdrMessageHandler(),
+            new CoordinateMediationV3MediatorMessageHandler(),
+            new CoordinateMediationV3RecipientMessageHandler()
             ],
         }),
         new DIDComm({ transports: [new DIDCommHttpTransport()] }),
@@ -103,6 +165,12 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
                 new DataStoreDiscoveryProvider(),
             ],
         }),
+        new MediationManagerPlugin(
+          true, // isMediateDefaultGrantAll
+          policyStore,
+          mediationStore,
+          recipientDidStore
+        )
     ]
 })
   
