@@ -11,26 +11,37 @@ app.use(express.text())
 // Istanza del manager DIDComm
 const didcommManager = new DIDCommManager()
 
-// Endpoint per ricevere messaggi DIDComm
-app.post('/messaging', async (req, res) => {
-  console.log('\n Nuovo messaggio DIDComm ricevuto')
+app.post('/receive-messages', async (req, res) => {
+  console.log('\n Richiesta ricezione messaggi')
   
   try {
-    //Processo il messaggio ricevuto
-    const unpackedMessage = await didcommManager.receiveMessages(req.body.did);
-    for (const msg of unpackedMessage) {
+    const { did } = req.body
+    if (!did) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'DID richiesto'
+      })
+    }
+    
+    const messages = await didcommManager.receiveMessages(did);
+    console.log(`Ricevuti ${messages.length} messaggi`)
+
+    for (const msg of messages) {
       console.log('Messaggio elaborato:', JSON.stringify(msg, null, 2))
     }
+    
     res.status(200).json({ 
       status: 'success',
-      message: 'Messaggio ricevuto e processato' 
+      message: 'Messaggi ricevuti e processati',
+      count: messages.length,
+      messages
     })
     
   } catch (error) {
-    console.error('Errore nel processare il messaggio:', error)
+    console.error('Errore nel processare i messaggi:', error)
     res.status(400).json({ 
       status: 'error',
-      message: 'Errore nel processare il messaggio',
+      message: 'Errore nel processare i messaggi',
       error: error instanceof Error ? error.message : 'Unknown error'
     })
   }
@@ -48,13 +59,13 @@ app.post('/send-message', async (req, res) => {
       })
     }
     
-    const result = await didcommManager.sendMessage(
+    const result = await didcommManager.sendMessageMediator(
       senderDID,
       recipientDID,
       body
     )
 
-    console.log(' Messaggio inviato con risultato:', result)
+    console.log(' Messaggio inviato con risultato:', result.returnMessage)
     
     res.json({
       status: 'success',
@@ -72,34 +83,6 @@ app.post('/send-message', async (req, res) => {
   }
 })
 
-// Endpoint per aggiungere un mittente autorizzato
-app.post('/add-sender', async (req, res) => {
-  try {
-    const { senderDID } = req.body
-
-    if (!senderDID) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Parametri mancanti: senderDID sono richiesti'
-      })
-    }
-
-    await didcommManager.addAllowedSender(senderDID)
-
-    res.json({
-      status: 'success',
-      message: 'Sender aggiunto con successo'
-    })
-
-  } catch (error) {
-    console.error('Errore nell\'aggiunta del sender:', error)
-    res.status(500).json({
-      status: 'error',
-      message: 'Errore nell\'aggiunta del sender',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    })
-  }
-})
 
 // Endpoint per confermare la lettura di un messaggio
 app.post('/confirm-read', async (req, res) => {
@@ -155,7 +138,6 @@ export async function startClient(clientAlias : string, port: number) {
     const mediatorDID = await agent.didManagerFind({ alias: process.env.MEDIATOR_ALIAS })
     await didcommManager.initialize(clientAlias, mediatorDID ? mediatorDID[0].did : '')
     await didcommManager.setupDIDCommMediator(`http://localhost:${process.env.MEDIATOR_PORT}/didcomm`, [mediatorDID ? mediatorDID[0].did : ''])
-    //await didcommManager.registerWithMediator()
 
     // Avvio il server Express
     app.listen(port, () => {
@@ -163,11 +145,10 @@ export async function startClient(clientAlias : string, port: number) {
       console.log(`Endpoint messaggi: http://localhost:${port}/messaging`)
       console.log(`DID dell'agente: ${didcommManager.getDID()}`)
       console.log('\nEndpoints disponibili:')
-      console.log('  POST /messaging     - Ricevi messaggi DIDComm')
-      console.log('  POST /send-message  - Invia un messaggio')
-      console.log('  POST /add-sender    - Aggiungi mittente autorizzato')
-      console.log('  POST /confirm-read  - Conferma lettura messaggio')
-      console.log('  GET  /messages     - Lista messaggi salvati')
+      console.log('  POST /receive-messages - Ricevi messaggi DIDComm')
+      console.log('  POST /send-message     - Invia un messaggio')
+      console.log('  POST /confirm-read     - Conferma lettura messaggio')
+      console.log('  GET  /messages         - Lista messaggi salvati')
       console.log('\n' + '='.repeat(50))
     })
     

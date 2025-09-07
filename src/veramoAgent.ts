@@ -3,7 +3,7 @@ import { IDIDManager, IResolver} from "@veramo/core"
 import { IDataStore, IDataStoreORM} from "@veramo/core"
 import { IKeyManager, ICredentialPlugin} from "@veramo/core"
 import {IMessageHandler} from "@veramo/core"
-import { IDIDComm, DIDComm, DIDCommMessageHandler, DIDCommHttpTransport } from "@veramo/did-comm"
+import { IDIDComm, DIDComm, DIDCommMessageHandler, DIDCommHttpTransport, RoutingMessageHandler } from "@veramo/did-comm"
 import { ISelectiveDisclosure, SdrMessageHandler, SelectiveDisclosure } from "@veramo/selective-disclosure"
 import { DIDDiscovery, IDIDDiscovery } from "@veramo/did-discovery"
 import { Entities, KeyStore, DIDStore, PrivateKeyStore, migrations, DataStore, DataStoreORM, DataStoreDiscoveryProvider } from '@veramo/data-store'
@@ -15,13 +15,13 @@ import { DIDResolverPlugin} from "@veramo/did-resolver"
 import { EthrDIDProvider } from "@veramo/did-provider-ethr"
 import { Resolver } from 'did-resolver'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
-import { MessageHandler } from "@veramo/message-handler"
+import { MessageHandler} from "@veramo/message-handler"
 import { JwtMessageHandler } from "@veramo/did-jwt"
 import { CredentialIssuer, CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
 
 import { IMediationManager, MediationManagerPlugin, PreMediationRequestPolicy, MediationResponse, RequesterDid } from '@veramo/mediation-manager'
 import { KeyValueStore, KeyValueTypeORMStoreAdapter, Entities as KVStoreEntities, kvStoreMigrations} from '@veramo/kv-store'
-import {CoordinateMediationV3MediatorMessageHandler, CoordinateMediationV3RecipientMessageHandler} from '@veramo/did-comm'
+import { CoordinateMediationV3MediatorMessageHandler, CoordinateMediationV3RecipientMessageHandler,  } from '@veramo/did-comm'
 
 import dotenv from 'dotenv'
 dotenv.config()
@@ -30,6 +30,7 @@ dotenv.config()
 
 // Tipo dei DIDCommV2
 export const DIDCommV2MessageType = 'https://didcomm.org/basicmessage/2.0/message'
+export const DIDCommV2MediatorMessageType = 'https://didcomm.org/routing/2.0/forward'
 
 // Tipi per Coordinate Mediation v3
 export enum CoordinateMediation {
@@ -50,6 +51,8 @@ export enum MessagePickup {
   MESSAGES_RECEIVED = 'https://didcomm.org/messagepickup/3.0/messages-received',
   LIVE_DELIVERY_CHANGE = 'https://didcomm.org/messagepickup/3.0/live-delivery-change'
 }
+
+
 
 /// CONFIGURAZIONE AGENTE ///
 
@@ -148,12 +151,11 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
         new MessageHandler({
             messageHandlers: [
             new DIDCommMessageHandler(),
-            new JwtMessageHandler(),
-            new W3cMessageHandler(),
-            new SdrMessageHandler(),
-            new CoordinateMediationV3MediatorMessageHandler(),
-            new CoordinateMediationV3RecipientMessageHandler()
-            ],
+            new CoordinateMediationV3MediatorMessageHandler(), 
+            new RoutingMessageHandler(),
+            //new MessagePickupV3MessageHandler(),
+            new CoordinateMediationV3RecipientMessageHandler(),
+        ],
         }),
         new DIDComm({ transports: [new DIDCommHttpTransport()] }),
         new CredentialPlugin(),
