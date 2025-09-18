@@ -1,4 +1,13 @@
 ```mermaid
+%%{init: {"theme":"base", "themeVariables": {
+  "background":"#000000",
+  "primaryColor":"#000000",
+  "primaryTextColor":"#ffffff",
+  "primaryBorderColor":"#ffffff",
+  "lineColor":"#ffffff",
+  "secondaryColor":"#000000",
+  "tertiaryColor":"#000000"
+}}}%%
 sequenceDiagram
   autonumber
   participant R as Recipient Agent
@@ -7,7 +16,7 @@ sequenceDiagram
   participant S as Mediator Store/Policy
 
   %% ----- Mediate Request -----
-  rect rgb(245,245,245)
+  rect rgb(30,30,30)
     note over R,M: Primo step: mediate-request (thid = msg_1)
     R->>T: DIDComm msg (type: mediate-request), (headers: return_route=all, from: DID_r, to: DID_m)
     T->>M: Deliver mediate-request
@@ -28,7 +37,7 @@ sequenceDiagram
   end
 
   %% ----- Recipient Update -----
-  rect rgb(245,245,245)
+  rect rgb(30,30,30)
     note over R,M: Secondo step: recipient-update (thid = msg_2)
     R->>T: DIDComm msg (type: recipient-update), (headers: return_route=all) (body: { updates:[{recipient_did, action}] })
     T->>M: Deliver recipient-update
@@ -57,7 +66,7 @@ sequenceDiagram
   end
 
   %% ----- Recipient Query -----
-  rect rgb(245,245,245)
+  rect rgb(30,30,30)
     note over R,M: Terzo step: recipient-query (thid = msg_3)
     R->>T: DIDComm msg (type: recipient-query), (headers: return_route=all), (body: { paginate?: {limit, offset} })
     T->>M: Deliver recipient-query
