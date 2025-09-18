@@ -18,7 +18,7 @@ sequenceDiagram
   %% ----- Mediate Request -----
   rect rgb(30,30,30)
     note over R,M: Primo step: mediate-request (thid = msg_1)
-    R->>T: DIDComm msg (type: mediate-request), (headers: return_route=all, from: DID_r, to: DID_m)
+    R->>T: DIDComm msg (type: mediate-request)<br/>headers: return_route=all, from: DID_r, to: DID_m
     T->>M: Deliver mediate-request
 
     M->>S: Policy.shouldGrant(DID_r)?
@@ -26,11 +26,11 @@ sequenceDiagram
       S-->>M: true
       M->>S: Store.grantFor(DID_r)
       M->>S: Store.getRoutingDids() -> [routing_did...]
-      M-->>T: Reply type: (mediate-grant), (thid: msg_1) , (body: { routing_did: [...] })
+      M-->>T: Reply type: (mediate-grant)<br/>thid: msg_1<br/>body: { routing_did: [...] }
       T-->>R: mediate-grant (sync via return_route)
     else Deny
       S-->>M: false
-      M-->>T: Reply (type: mediate-deny), (thid: msg_1)
+      M-->>T: Reply (type: mediate-deny)<br/>thid: msg_1
       T-->>R: mediate-deny (sync via return_route)
       note over R: Fine flusso se deny
     end
@@ -39,7 +39,7 @@ sequenceDiagram
   %% ----- Recipient Update -----
   rect rgb(30,30,30)
     note over R,M: Secondo step: recipient-update (thid = msg_2)
-    R->>T: DIDComm msg (type: recipient-update), (headers: return_route=all) (body: { updates:[{recipient_did, action}] })
+    R->>T: DIDComm msg (type: recipient-update)<br/>headers: return_route=all<br/>body: { updates:[{recipient_did, action}] 
     T->>M: Deliver recipient-update
 
     M->>S: Store.hasGrant(DID_r)?
@@ -56,11 +56,11 @@ sequenceDiagram
           M-->>M: mark result = client_error
         end
       end
-      M-->>T: Reply (type: recipient-update-response), ((thid: msg_2), (body: { updated:[{recipient_did, action, result}] })
+      M-->>T: Reply (type: recipient-update-response)<br/>thid: msg_2<br/>body: { updated:[{recipient_did, action, result}] }
       T-->>R: recipient-update-response (sync)
     else Nessun grant
       S-->>M: false
-      M-->>T: Reply (type: recipient-update-response), (thid: msg_2), (body: { updated: [] })
+      M-->>T: Reply (type: recipient-update-response)<br/>thid: msg_2)<br/>body: { updated: [] }
       T-->>R: recipient-update-response (sync)
     end
   end
@@ -68,18 +68,18 @@ sequenceDiagram
   %% ----- Recipient Query -----
   rect rgb(30,30,30)
     note over R,M: Terzo step: recipient-query (thid = msg_3)
-    R->>T: DIDComm msg (type: recipient-query), (headers: return_route=all), (body: { paginate?: {limit, offset} })
+    R->>T: DIDComm msg (type: recipient-query)<br/>headers: return_route=all)<br/>body: { paginate?: {limit, offset} }
     T->>M: Deliver recipient-query
 
     M->>S: Store.hasGrant(DID_r)?
     alt Grant attivo
       S-->>M: true
       M->>S: Store.listRecipientDids(limit, offset) -> [did...]
-      M-->>T: Reply (type: recipient), (thid: msg_3), (body: { dids: [{ recipient_did }, ...] })
+      M-->>T: Reply (type: recipient), (thid: msg_3)<br/>body: { dids: [{ recipient_did }, ...] }
       T-->>R: recipient (sync)
     else Nessun grant
       S-->>M: false
-      M-->>T: Reply (type: recipient), (thid: msg_3), (body: { dids: [] })
+      M-->>T: Reply (type: recipient)<br/>thid: msg_3)<br/>body: { dids: [] })
       T-->>R: recipient (sync)
     end
   end
