@@ -26,7 +26,6 @@ sequenceDiagram
       Q-->>M: true
       M-->>T: Reply (type: messagepickup/3.0/message-delivery)<br/>body: { messages:[{ id, message: forwarded_msg }] }
       T-->>S: message-delivery (sync via return_route)
-      note over R: Il canale “live” del Recipient riceverà il messaggio in tempo reale<br/>(out of scope di questo scambio)
     else Non attivo (accoda)
       Q-->>M: false
       M->>Q: enqueue(DID_r, forwarded_msg)
