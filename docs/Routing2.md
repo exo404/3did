@@ -31,7 +31,7 @@ sequenceDiagram
       M->>Q: enqueue(DID_r, forwarded_msg)
       Q-->>M: { id }
       M-->>T: (nessuna reply oltre a 202 trasporto)
-      T-->>S: ack trasporto (es. HTTP 202)
+      T-->>S: ACK trasporto (es. HTTP 202)
     end
   end
   ```
