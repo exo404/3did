@@ -49,6 +49,7 @@ ACA-Py implementa un server plug and play di questo tipo. Effettuare misure di l
 [CoordinateMediationV3](https://didcomm.org/coordinate-mediation/3.0/) </br>
 [MessagePickupV3](https://didcomm.org/messagepickup/3.0/) </br>
 [Routing 2.0](https://didcomm.org/routing/2.0/) </br>
+[DIDComm Routing](https://didcomm.org/book/v2/routing) </br>
 [DIDComm in Veramo](https://github.com/decentralized-identity/veramo/tree/next/packages/did-comm) </br>
 [Mediation Manager in Veramo](https://github.com/decentralized-identity/veramo/tree/next/packages/mediation-manager) </br>
 
