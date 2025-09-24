@@ -37,7 +37,6 @@ comunicazione sicura basata su DID. Quando si utilizza il protocollo DIDComm, il
 ## Soluzione proposta
 Creazione di un server che esponga tutte le API del mediatore in modo da fornire un prodotto già pronto per il test. Una soluzione simile è stata proposta da Veramo per esporre le API di un agente remoto: 
 - [RemoteServer](https://veramo.io/docs/api/remote-server)
-- [RemoteClient](https://veramo.io/docs/api/remote-client)
 </br>
 ACA-Py implementa un server plug and play di questo tipo. Effettuare misure di latenza per entrambi e confrontarle potrebbe essere interessante. </br>
 [Mediator in ACA-Py](https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0046-mediators-and-relays#summary) </br>
