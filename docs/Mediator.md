@@ -23,17 +23,19 @@ comunicazione sicura basata su DID. Quando si utilizza il protocollo DIDComm, il
 2. MessagePickup V3
    - Enumerazioni per i tipi di messaggi (`delivery-request`, `status-request`).  
    - Handler plugin per *mediator* e *recipient*.
+   - Funzioni per la creazione dei messaggi (`createV3DeliveryRequestMessage`, `createStatusRequestMessage`)
 
 3. Routing 2.0  
    - Metodo `RoutingMessageHandler.handle()` per i messaggi di tipo `forward`.  
    - Plugin `RoutingMessageHandler` incluso nel pacchetto `did-comm`.
-   - 
+     
 ### Problemi:
 - Tutti i componenti sono in beta quindi non ancora garantiti per l’uso in produzione.  
-- Funzionalità di pickup asincrono non complete. In pratica l'unico protocollo pienamente implementato è il `CoordinateMediationV3`.
+- Funzionalità di pickup asincrono non complete. Manca un supporto delle policy di gestione delle code di messaggi.
+- Documentazione per l'implementazione di un mediatore quasi assente.
 
 ## Soluzione proposta
-Creazione di un server che esponga tutte le API del mediatore, completando il flusso d'esecuzione dei due protocolli mancanti (MP3 e Routing 2.0). Una soluzione simile è stata proposta da Veramo per esporre le API di un agente remoto: 
+Creazione di un server che esponga tutte le API del mediatore in modo da fornire un prodotto già pronto per il test. Una soluzione simile è stata proposta da Veramo per esporre le API di un agente remoto: 
 - [RemoteServer](https://veramo.io/docs/api/remote-server)
 - [RemoteClient](https://veramo.io/docs/api/remote-client)
 </br>
