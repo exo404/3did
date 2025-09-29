@@ -42,6 +42,31 @@ npx @veramo/cli config create-secret-key
 ```bash
 node --loader ts-node/esm ./src/YOUR_TEST.ts
 ```
+## Local testnet deploy
+### Install Anvil
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
+### Fork Sepolia
+```bash
+anvil \
+  --fork-url https://sepolia.infura.io/v3/$INFURA_PROJECT_ID \
+  --chain-id 11155111 \
+  --port 8545 \
+  --block-time 1
+```
+
+### Give 10ETH to a DID wallet
+```bash
+cast rpc anvil_setBalance 0xADDRESS 0x21E19E0C9BAB2400000
+```
+
+### RPC URL
+Note that you'll use HTTP instead of HTTPS because Anvil doesn't use TLS
+```bash
+http://127.0.0.1:8545
+```
 
 ## Sequence Diagram for V1
 <img width="682" height="1334" alt="image" src="https://github.com/user-attachments/assets/b5243968-277a-441d-82d4-3893fad85436" />
