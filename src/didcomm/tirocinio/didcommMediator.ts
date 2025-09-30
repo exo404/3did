@@ -1,6 +1,6 @@
 import express, { raw } from 'express'
 import { agent, DIDCommV2MediatorMessageType } from '../veramoAgent.js'
-import { DIDCommManager } from './DIDCommManager.js'
+import { DIDCommManager } from './tirocinio/DIDCommManager.js'
 
 const app = express()
 const PORT = process.env.MEDIATOR_PORT

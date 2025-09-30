@@ -1,6 +1,7 @@
-import { agent } from '../src/veramoAgent.js'
+import { agentMediator } from '../src/veramoAgentMediator.js'
 import dotenv from 'dotenv'
 import { ethers } from 'ethers'
+
 dotenv.config()
 
 const aliasMediator = process.env.MEDIATOR_ALIAS
@@ -11,7 +12,7 @@ const senderDID = 'did:ethr:sepolia:0x029741c1ed91433bf5db3702f15d5a71f8e229851b
 
 export async function findDIDAddress(alias: string) {
   try {
-    const identifiers = await agent.didManagerFind({ alias })
+    const identifiers = await agentMediator.didManagerFind({ alias })
     console.log(`Identifiers found for alias '${alias}':`, identifiers)
     for (let index = 0; index < identifiers[0].keys.length; index++) {
       const element = identifiers[0].keys[index];
@@ -48,8 +49,4 @@ export async function findDIDAddress(alias: string) {
   }
 }
 console.log("Mediator:")
-await findDIDAddress(aliasMediator)
-console.log("Client 1:")
-await findDIDAddress(aliasClient1)
-console.log("Client 2:")
-await findDIDAddress(aliasClient2)
+await findDIDAddress('mediatorServer')

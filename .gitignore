@@ -2,6 +2,7 @@ node_modules
 yarn.lock
 package.json
 database.sqlite
+mediation.sqlite
 .env
 .vscode
 .DS_Store

@@ -15,44 +15,13 @@ import { DIDResolverPlugin} from "@veramo/did-resolver"
 import { EthrDIDProvider } from "@veramo/did-provider-ethr"
 import { Resolver } from 'did-resolver'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
-import { MessageHandler} from "@veramo/message-handler"
-import { JwtMessageHandler } from "@veramo/did-jwt"
-import { CredentialIssuer, CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
+import { MessageHandler } from "@veramo/message-handler"
+import { CredentialPlugin } from "@veramo/credential-w3c"
 
-import { IMediationManager, MediationManagerPlugin, PreMediationRequestPolicy, MediationResponse, RequesterDid } from '@veramo/mediation-manager'
-import { KeyValueStore, KeyValueTypeORMStoreAdapter, Entities as KVStoreEntities, kvStoreMigrations} from '@veramo/kv-store'
-import { CoordinateMediationV3MediatorMessageHandler, CoordinateMediationV3RecipientMessageHandler,  } from '@veramo/did-comm'
+
 
 import dotenv from 'dotenv'
 dotenv.config()
-
-//// TIPI ENUM ////
-
-// Tipo dei DIDCommV2
-export const DIDCommV2MessageType = 'https://didcomm.org/basicmessage/2.0/message'
-export const DIDCommV2MediatorMessageType = 'https://didcomm.org/routing/2.0/forward'
-
-// Tipi per Coordinate Mediation v3
-export enum CoordinateMediation {
-  MEDIATE_REQUEST = 'https://didcomm.org/coordinate-mediation/3.0/mediate-request',
-  MEDIATE_GRANT = 'https://didcomm.org/coordinate-mediation/3.0/mediate-grant',
-  MEDIATE_DENY = 'https://didcomm.org/coordinate-mediation/3.0/mediate-deny',
-  RECIPIENT_UPDATE = 'https://didcomm.org/coordinate-mediation/3.0/recipient-update',
-  RECIPIENT_UPDATE_RESPONSE = 'https://didcomm.org/coordinate-mediation/3.0/recipient-update-response',
-  RECIPIENT_QUERY = 'https://didcomm.org/coordinate-mediation/3.0/recipient-query',
-  RECIPIENT_QUERY_RESPONSE = 'https://didcomm.org/coordinate-mediation/3.0/recipient-query-response'
-}
-// Tipi per Message Pickup v3
-export enum MessagePickup {
-  STATUS_REQUEST = 'https://didcomm.org/messagepickup/3.0/status-request',
-  STATUS = 'https://didcomm.org/messagepickup/3.0/status',
-  DELIVERY_REQUEST = 'https://didcomm.org/messagepickup/3.0/delivery-request',
-  DELIVERY = 'https://didcomm.org/messagepickup/3.0/delivery',
-  MESSAGES_RECEIVED = 'https://didcomm.org/messagepickup/3.0/messages-received',
-  LIVE_DELIVERY_CHANGE = 'https://didcomm.org/messagepickup/3.0/live-delivery-change'
-}
-
-
 
 /// CONFIGURAZIONE AGENTE ///
 
@@ -62,47 +31,21 @@ const dbConnection = await new DataSource({
     type: 'sqlite',
     database: 'database.sqlite',
     synchronize: false,
-    migrations: [...migrations, ...kvStoreMigrations],
+    migrations: migrations,
     migrationsRun: true,
     logging: false,
-    entities: [...Entities, ...KVStoreEntities],
+    entities: Entities,
   }).initialize()
-
-// Configuro gli store per la mediazione
-const policyStore = new KeyValueStore<PreMediationRequestPolicy>({
-    namespace: 'mediation_policy',
-    store: new KeyValueTypeORMStoreAdapter({ 
-    dbConnection: dbConnection, 
-    namespace: 'mediation_policy',
-    }),
-})
-
-const mediationStore = new KeyValueStore<MediationResponse>({
-    namespace: 'mediation_response',
-    store: new KeyValueTypeORMStoreAdapter({ 
-    dbConnection: dbConnection, 
-    namespace: 'mediation_response' 
-    }),
-})
-
-const recipientDidStore = new KeyValueStore<RequesterDid>({
-    namespace: 'recipient_did',
-    store: new KeyValueTypeORMStoreAdapter({ 
-    dbConnection: dbConnection, 
-    namespace: 'recipient_did' 
-    }),
-})
 
 
 export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IDataStoreORM & IResolver &IMessageHandler 
-                            & IDIDComm & ICredentialPlugin & ISelectiveDisclosure & IDIDDiscovery & IMediationManager>
+                            & IDIDComm & ICredentialPlugin & ISelectiveDisclosure & IDIDDiscovery>
 ({
     plugins: [
         new KeyManager({
             store: new KeyStore(dbConnection),
             kms: {
                 local: new KeyManagementSystem(new PrivateKeyStore(dbConnection, new SecretBox(secretKey)))
-                //web3: new KeyManagementSystem(new Web3KeyStore(web3Provider))
             }
         }),
         new DIDManager({
@@ -151,28 +94,16 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
         new MessageHandler({
             messageHandlers: [
             new DIDCommMessageHandler(),
-            new CoordinateMediationV3MediatorMessageHandler(), 
-            new RoutingMessageHandler(),
-            //new MessagePickupV3MessageHandler(),
-            new CoordinateMediationV3RecipientMessageHandler(),
         ],
         }),
         new DIDComm({ transports: [new DIDCommHttpTransport()] }),
         new CredentialPlugin(),
-        new CredentialIssuer(),
-        new SelectiveDisclosure(),
         new DIDDiscovery({
             providers: [
                 new AliasDiscoveryProvider(),
                 new DataStoreDiscoveryProvider(),
             ],
         }),
-        new MediationManagerPlugin(
-          true, // isMediateDefaultGrantAll
-          policyStore,
-          mediationStore,
-          recipientDidStore
-        )
     ]
 })
   

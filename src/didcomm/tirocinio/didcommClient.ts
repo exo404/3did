@@ -1,6 +1,6 @@
 import express from 'express'
 import { DIDCommManager } from './DIDCommManager.js'
-import { agent } from '../veramoAgent.js'
+import { agent } from './veramoAgentClient.js'
 
 const app = express()
 

@@ -1,6 +1,6 @@
-import { verifyVC } from '../src/triangle/verifierService.js'
-import { createDID } from '../src/triangle/holderService.js'
-import { createVC } from '../src/triangle/issuerService.js'
+import { verifyVC } from '../../src/triangle/verifierService.js'
+import { createDID } from '../../src/triangle/holderService.js'
+import { createVC } from '../../src/triangle/issuerService.js'
 
 const aliasServer = 'default'
 const aliasSender = 'test-sender9'

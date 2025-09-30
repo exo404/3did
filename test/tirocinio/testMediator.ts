@@ -1,4 +1,4 @@
-import { agent } from "../src/veramoAgent.js";
+import { agent } from "../../src/didcomm/tirocinio/veramoAgentClient.js";
 import dotenv from "dotenv";
 dotenv.config();
 

@@ -1,4 +1,4 @@
-import { DIDCommManager } from "../src/didcomm/DIDCommManager.js";
+import { DIDCommManager } from "../src/didcomm/tirocinio/DIDCommManager.js";
 
 const recipientDID = "did:ethr:sepolia:0x035f3fd0cbb46d747c8e810fa371b4dd1f5e68d7dd035cfc0bbde2ea9e63e939e6";
 const messageType = "https://didcomm.org/basicmessage/2.0/message";

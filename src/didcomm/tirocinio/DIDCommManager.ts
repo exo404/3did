@@ -1,8 +1,8 @@
-import { agent, DIDCommV2MessageType, MessagePickup, DIDCommV2MediatorMessageType} from '../veramoAgent.js' 
+import { agent, DIDCommV2MessageType, MessagePickup, DIDCommV2MediatorMessageType} from './veramoAgentClient.js' 
 import { DIDCommMessageMediaType, Update, UpdateAction} from '@veramo/did-comm'
 import { CoordinateMediation, createV3DeliveryRequestMessage, createV3MediateRequestMessage, createV3RecipientUpdateMessage } from '@veramo/did-comm'
 import { v4 as uuidv4 } from 'uuid'
-import { createDID } from '../triangle/holderService.js'
+import { createDID } from '../../triangle/holderService.js'
 import { send } from 'process'
 
 

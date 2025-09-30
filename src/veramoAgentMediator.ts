@@ -1,0 +1,204 @@
+// ----------------------------------------------------------------------------------------------------
+// ------------------------------------------- IMPORT -------------------------------------------------
+import { 
+  MediationManagerPlugin, 
+  MediationResponse, 
+  PreMediationRequestPolicy, 
+  RequesterDid
+} from '@veramo/mediation-manager'
+
+import {
+  KeyValueStore,
+  KeyValueTypeORMStoreAdapter,
+  Entities as KVStoreEntities,
+  kvStoreMigrations,
+} from '@veramo/kv-store'
+
+import {DataSource } from 'typeorm'
+
+import {
+  DataStore,
+  DataStoreORM,
+  DIDStore,
+  Entities, 
+  KeyStore, 
+  migrations,
+  PrivateKeyStore
+} from '@veramo/data-store'
+
+// Handler Veramo per il protocollo Coordinate Mediation v3 
+import {
+  CoordinateMediationV3MediatorMessageHandler,
+  CoordinateMediationV3RecipientMessageHandler,
+  DIDComm,
+  DIDCommHttpTransport,
+  DIDCommMessageHandler,
+  IDIDComm,
+  PickupMediatorMessageHandler,
+  RoutingMessageHandler,
+} from '@veramo/did-comm'
+
+import { KeyManager } from '@veramo/key-manager'
+import { DIDManager } from '@veramo/did-manager'
+import { EthrDIDProvider } from '@veramo/did-provider-ethr'
+import { DIDResolverPlugin } from '@veramo/did-resolver'
+import { Resolver } from 'did-resolver'
+import { KeyManagementSystem, SecretBox } from '@veramo/kms-local'
+import { 
+  createAgent, 
+  ICredentialPlugin, 
+  IDataStore, 
+  IDataStoreORM, 
+  IDIDManager, 
+  IKeyManager, 
+  IMessageHandler, 
+  IResolver 
+} from '@veramo/core'
+import { MessageHandler } from '@veramo/message-handler'
+import { CredentialPlugin } from '@veramo/credential-w3c'
+import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
+
+import dotenv from 'dotenv'
+
+dotenv.config()
+const infuraProjectId = process.env.INFURA_PROJECT_ID  
+const secretKey = process.env.MEDIATOR_SECRET_KEY
+const dbConnection = new DataSource({
+  name: 'mediator',
+  type: 'sqlite',
+  database: './mediation.sqlite',
+  synchronize: false,
+  migrations: [...migrations ,...kvStoreMigrations],
+  migrationsRun: true,
+  logging: false,
+  entities: [...Entities ,...KVStoreEntities],
+}).initialize()
+
+
+// --------------------------------------------------------------------------------------------------------------
+// ------------------------------------------- COORDINATE MEDIATION V3 ------------------------------------------
+  const policyStore = new KeyValueStore<PreMediationRequestPolicy>({
+    namespace: 'mediation_policy',
+    store: new KeyValueTypeORMStoreAdapter({ dbConnection, namespace: 'mediation_policy' }),
+  })
+
+  const mediationStore = new KeyValueStore<MediationResponse>({
+    namespace: 'mediation_response',
+    store: new KeyValueTypeORMStoreAdapter({ dbConnection, namespace: 'mediation_response' }),
+  })
+
+  const recipientDidStore = new KeyValueStore<RequesterDid>({
+    namespace: 'recipient_did',
+    store: new KeyValueTypeORMStoreAdapter({ dbConnection, namespace: 'recipient_did' }),
+  })
+
+const isDefaultMediateGrantAll = true;
+
+const mediationManager = new MediationManagerPlugin(
+  isDefaultMediateGrantAll,
+  policyStore,
+  mediationStore,
+  recipientDidStore
+)
+
+// Gli handler Coordinate Mediation V3 
+  const mediatorH = new CoordinateMediationV3MediatorMessageHandler()
+  const recipientH = new CoordinateMediationV3RecipientMessageHandler()
+
+// ---------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------  AGENT ------------------------------------------------------
+
+export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore & IDataStoreORM & IResolver & IMessageHandler & IDIDComm & ICredentialPlugin>
+  ({
+      plugins: [
+          new KeyManager({
+              store: new KeyStore(dbConnection),
+              kms: {
+                  local: new KeyManagementSystem(new PrivateKeyStore(dbConnection, new SecretBox(secretKey)))
+              }
+          }),
+          new DIDManager({
+              store: new DIDStore(dbConnection),
+              defaultProvider: 'did:ethr:sepolia',
+              providers: {
+                  'did:ethr:sepolia': new EthrDIDProvider({
+                      defaultKms: 'local',
+                      network: 'sepolia',
+                      rpcUrl: 'http://127.0.0.1:8545',
+                      registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818', 
+                      ttl: 60 * 60 * 24 * 30 * 12 + 1,
+                  }),
+                  'did:ethr': new EthrDIDProvider({
+                      defaultKms: 'local',
+                      network: 'mainnet',
+                      rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
+                      registry: '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b', 
+                      ttl: 60 * 60 * 24 * 30 * 12 + 1,
+                  }),
+              }
+          }),
+          new DIDResolverPlugin({
+              resolver: new Resolver({
+                  ...ethrDidResolver({
+                      infuraProjectId: infuraProjectId,
+                      networks: [
+                          { 
+                              name: 'sepolia', 
+                              chainId: 11155111, 
+                              rpcUrl: 'http://127.0.0.1:8545',
+                              registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818'
+                          },
+                          { 
+                              name: 'mainnet', 
+                              chainId: 1, 
+                              rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
+                              registry: '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b'
+                          },
+                      ]
+                  })
+              })
+          }),
+          new DataStore(dbConnection),
+          new DataStoreORM(dbConnection),
+          new MessageHandler({
+                  messageHandlers: [
+                  new DIDCommMessageHandler(),
+                  mediatorH,
+                  recipientH,
+                  new RoutingMessageHandler(),
+                  new PickupMediatorMessageHandler(),
+              ],
+          }),
+          new DIDComm({ transports: [new DIDCommHttpTransport()] }),
+          new CredentialPlugin(),
+          mediationManager,
+      ]
+  })
+
+// ---------------------------------------------------------------------------------------------------------------
+// -------------------------------------------------  DID INIT ---------------------------------------------------
+
+export const mediatorDID = 'did:ethr:sepolia:0x0208c168457bcbed44c85c2805fff6e52d345a13cc51e33c447c741c08652607c9'
+export const mediatorETH = '0x40ad3953b31c1Df29d5985d6e8fC45bd4f116e15'
+export const holder1DID = 'did:ethr:sepolia:0x0226318a9fc4d308e32ac76663f92db890e73df6ca25206c05b4b5706413c8f983'
+export const holder1ETH = '0x8E20125DAbD635b2cE8C181f03F14C2Af6880349'
+
+/* 
+ * Aggiungo la chiave per la comunicazione 
+ * DIDComm (X25519) alla DID del mediatore 
+const x25519Key = await agentMediator.keyManagerCreate({
+    kms: 'local',
+    type: 'X25519',
+})
+
+try {
+  await agentMediator.didManagerAddKey({
+    did: mediatorDID,
+    key: x25519Key,
+  })
+} catch (error) {
+  console.log(error)
+}
+*/
+
+

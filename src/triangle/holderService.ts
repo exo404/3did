@@ -1,5 +1,5 @@
 import { IIdentifier } from '@veramo/core'
-import { agent } from '../veramoAgent.js'
+import { agentMediator as agent } from '../veramoAgentMediator.js'
 
 export async function createDID(alias: string): Promise<IIdentifier> {
   try {
@@ -39,6 +39,9 @@ export async function createDID(alias: string): Promise<IIdentifier> {
       provider: 'did:ethr:sepolia',
       kms: 'local'
     })
+
+    console.log(`DID: ${identifier.did}`)
+
     await agent.didManagerAddKey({
       did: identifier.did,
       key: x25519Key,
@@ -55,3 +58,5 @@ export async function createDID(alias: string): Promise<IIdentifier> {
     throw error
   }
 }
+
+createDID('holder1')
