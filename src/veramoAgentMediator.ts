@@ -35,6 +35,7 @@ import {
   DIDCommMessageHandler,
   IDIDComm,
   PickupMediatorMessageHandler,
+  PickupRecipientMessageHandler,
   RoutingMessageHandler,
 } from '@veramo/did-comm'
 
@@ -59,6 +60,9 @@ import { CredentialPlugin } from '@veramo/credential-w3c'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
 
 import dotenv from 'dotenv'
+
+// -----------------------------------------------------------------------------------------------------
+// ------------------------------------------- DB INIT -------------------------------------------------
 
 dotenv.config()
 const infuraProjectId = process.env.INFURA_PROJECT_ID  
@@ -128,13 +132,6 @@ export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore 
                       registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818', 
                       ttl: 60 * 60 * 24 * 30 * 12 + 1,
                   }),
-                  'did:ethr': new EthrDIDProvider({
-                      defaultKms: 'local',
-                      network: 'mainnet',
-                      rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
-                      registry: '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b', 
-                      ttl: 60 * 60 * 24 * 30 * 12 + 1,
-                  }),
               }
           }),
           new DIDResolverPlugin({
@@ -148,12 +145,6 @@ export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore 
                               rpcUrl: 'http://127.0.0.1:8545',
                               registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818'
                           },
-                          { 
-                              name: 'mainnet', 
-                              chainId: 1, 
-                              rpcUrl: 'https://mainnet.infura.io/v3/' + infuraProjectId,
-                              registry: '0xdca7ef03e98e0dc2b855be647c39abe984fcf21b'
-                          },
                       ]
                   })
               })
@@ -165,8 +156,9 @@ export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore 
                   new DIDCommMessageHandler(),
                   mediatorH,
                   recipientH,
-                  new RoutingMessageHandler(),
                   new PickupMediatorMessageHandler(),
+                  new PickupRecipientMessageHandler(),
+                  new RoutingMessageHandler(),
               ],
           }),
           new DIDComm({ transports: [new DIDCommHttpTransport()] }),
@@ -175,30 +167,5 @@ export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore 
       ]
   })
 
-// ---------------------------------------------------------------------------------------------------------------
-// -------------------------------------------------  DID INIT ---------------------------------------------------
-
-export const mediatorDID = 'did:ethr:sepolia:0x0208c168457bcbed44c85c2805fff6e52d345a13cc51e33c447c741c08652607c9'
-export const mediatorETH = '0x40ad3953b31c1Df29d5985d6e8fC45bd4f116e15'
-export const holder1DID = 'did:ethr:sepolia:0x0226318a9fc4d308e32ac76663f92db890e73df6ca25206c05b4b5706413c8f983'
-export const holder1ETH = '0x8E20125DAbD635b2cE8C181f03F14C2Af6880349'
-
-/* 
- * Aggiungo la chiave per la comunicazione 
- * DIDComm (X25519) alla DID del mediatore 
-const x25519Key = await agentMediator.keyManagerCreate({
-    kms: 'local',
-    type: 'X25519',
-})
-
-try {
-  await agentMediator.didManagerAddKey({
-    did: mediatorDID,
-    key: x25519Key,
-  })
-} catch (error) {
-  console.log(error)
-}
-*/
 
 

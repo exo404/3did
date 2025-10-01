@@ -1,7 +1,8 @@
-import { agent } from '../didcomm/tirocinio/veramoAgentClient.js'
-import { credential } from '../../test/tirocinio/testCredential.js'
+import { agentMediator} from '../veramoAgentMediator.js'
+import { agent as agentClient1} from '../veramoAgentClient1.js'
+import { agent as agentClient2} from '../veramoAgentClient2.js'
 
-export async function verifyVC() {
+export async function verifyVC(agent: any, credential: any) {
   const result = await agent.verifyCredential({
     credential: credential
   })

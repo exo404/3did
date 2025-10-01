@@ -1,6 +1,8 @@
-import { agent } from './veramoAgent.js'
+import { agentMediator} from '../veramoAgentMediator.js'
+import { agent as agentClient1} from '../veramoAgentClient1.js'
+import { agent as agentClient2} from '../veramoAgentClient2.js'
 
-export async function createVC() {
+export async function createVC(agent: any) {
   const identifier = await agent.didManagerGetByAlias({ alias: 'default' })
 
   const verifiableCredential = await agent.createVerifiableCredential({

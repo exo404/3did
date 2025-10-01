@@ -1,32 +1,23 @@
-import { agentMediator } from '../src/veramoAgentMediator.js'
+import { agentMediator} from '../src/veramoAgentMediator.js'
+import { agent as agentClient1} from '../src/veramoAgentClient1.js'
+import { agent as agentClient2 } from '../src/veramoAgentClient2.js'
 import dotenv from 'dotenv'
 import { ethers } from 'ethers'
 
 dotenv.config()
 
-const aliasMediator = process.env.MEDIATOR_ALIAS
-const aliasClient1 = process.env.CLIENT_1_ALIAS
-const aliasClient2 = process.env.CLIENT_2_ALIAS
-const serverDID = 'did:ethr:sepolia:0x035f3fd0cbb46d747c8e810fa371b4dd1f5e68d7dd035cfc0bbde2ea9e63e939e6'
-const senderDID = 'did:ethr:sepolia:0x029741c1ed91433bf5db3702f15d5a71f8e229851b196c3d7088060e956776c537'
-
-export async function findDIDAddress(alias: string) {
+export async function findDIDAddress(alias: string, agent : any) {
   try {
-    const identifiers = await agentMediator.didManagerFind({ alias })
-    console.log(`Identifiers found for alias '${alias}':`, identifiers)
+    const identifiers = await agent.didManagerFind({ alias })
     for (let index = 0; index < identifiers[0].keys.length; index++) {
       const element = identifiers[0].keys[index];
-      console.log(`Key ${index}:`, element)
     }
 
     if (identifiers.length === 0) {
-      console.log(`DID with alias '${alias}' not found`)
       return
     }
     
     const identifier = identifiers[0]
-    console.log(`DID: ${identifier.did}`)
-    console.log(`Controller Key ID: ${identifier.controllerKeyId}`)
     
     // Trovo la chiave di controllo
     const controllerKey = identifier.keys.find(key => key.kid === identifier.controllerKeyId)
@@ -34,19 +25,15 @@ export async function findDIDAddress(alias: string) {
     if (controllerKey && controllerKey.publicKeyHex) {
       // Derivo l'address dalla public key
       const publicKey = controllerKey.publicKeyHex
-      console.log(`Public Key: ${publicKey}`)
       
       // Se è una public key non compressa (130 caratteri)
       if (publicKey.length === 130) {
         const address = ethers.computeAddress('0x' + publicKey)
-        console.log(`Ethereum Address: ${address}`)
-        console.log(`Use this address in the faucet: ${address}`)
         return address
       }
     }
+
   } catch (error) {
     console.error('Error finding address:', error.message)
   }
 }
-console.log("Mediator:")
-await findDIDAddress('mediatorServer')
