@@ -1,7 +1,6 @@
 import { agentMediator} from "../veramoAgentMediator.js";
 import express from 'express'
 import bodyParser from 'body-parser'
-import { error } from "console";
 
 const app = express()
 app.use('/didcomm', bodyParser.text({
@@ -21,8 +20,12 @@ app.post('/didcomm', async (req, res) => {
       raw: typeof req.body === 'string' ? req.body : JSON.stringify(req.body),
       save: true,
     })
-    if (handled?.data) return res.status(200).json(handled.data)
-    return res.sendStatus(202)
+    const rr = handled?.metaData?.find?.(m => m?.type === 'ReturnRouteResponse')
+    if (rr?.value) {
+      const { message, contentType } = JSON.parse(rr.value)
+      res.status(200).type(contentType).send(message)
+      return
+    }
   } catch (e) {
     console.error(e)
     return res.send(e.message)

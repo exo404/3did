@@ -1,10 +1,9 @@
 import {agent as agentClient1} from '../src/veramoAgentClient1.js'
 import {agent as agentClient2} from '../src/veramoAgentClient2.js'
 import {agentMediator } from '../src/veramoAgentMediator.js'
-import { addKeyToDID, createDID } from '../src/triangle/holderService.js'
-import { findDIDAddress } from './findDID.js'
+import { addKeyToDID, createDID } from '../src/actors/holderService.js'
+import { findDIDAddress } from './utils.js'
 import { JsonRpcProvider } from "ethers";
-import { eventNames } from 'ethr-did-resolver/lib/helpers.js'
 
 export async function setupTest() : Promise<string []>{
   // ------------------------------------------------------------------------------------------------------
@@ -55,7 +54,7 @@ export async function setupTest() : Promise<string []>{
           }
       }
   }
-
+  /*
   const serviceClient1 = {
     did: didClient1,
     service: {
@@ -70,6 +69,7 @@ export async function setupTest() : Promise<string []>{
     },
   }
 
+
   const serviceClient2 = {
     did: didClient2,
     service: {
@@ -83,6 +83,7 @@ export async function setupTest() : Promise<string []>{
       },
     },
   }
+  */
   async function setupService(service: any, agent: any): Promise<void> {
       try {
         await agent.didManagerAddService(service)
@@ -93,11 +94,14 @@ export async function setupTest() : Promise<string []>{
   }
 
   await setupService(serviceMediator, agentMediator)
-  await setupService(serviceClient1, agentClient1)
-  await setupService(serviceClient2, agentClient2)
+  // await setupService(serviceClient1, agentClient1)
+  // await setupService(serviceClient2, agentClient2)
   return [didMediator, didClient1, didClient2]
 }
 
+
+// --------------------------------------------------------------------------------------------------------
+// --------------------------------------------- MAIN -----------------------------------------------------
 const setupDids = await setupTest()
 export const mediatorDID = setupDids[0]
 export const holder1DID = setupDids[1]

@@ -6,7 +6,7 @@ import { IDIDManager, IResolver} from "@veramo/core"
 import { IDataStore, IDataStoreORM} from "@veramo/core"
 import { IKeyManager, ICredentialPlugin} from "@veramo/core"
 import {IMessageHandler} from "@veramo/core"
-import { IDIDComm, DIDComm, DIDCommMessageHandler, DIDCommHttpTransport, RoutingMessageHandler, CoordinateMediationRecipientMessageHandler, CoordinateMediationMediatorMessageHandler, PickupRecipientMessageHandler, PickupMediatorMessageHandler } from "@veramo/did-comm"
+import { IDIDComm, DIDComm, DIDCommMessageHandler, DIDCommHttpTransport, RoutingMessageHandler, CoordinateMediationRecipientMessageHandler, PickupRecipientMessageHandler } from "@veramo/did-comm"
 import { DIDDiscovery, IDIDDiscovery } from "@veramo/did-discovery"
 import { Entities, KeyStore, DIDStore, PrivateKeyStore, migrations, DataStore, DataStoreORM, DataStoreDiscoveryProvider } from '@veramo/data-store'
 import { DataSource } from 'typeorm'
@@ -97,9 +97,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
         new MessageHandler({
             messageHandlers: [
             new DIDCommMessageHandler(),
-            new CoordinateMediationMediatorMessageHandler(),
             new CoordinateMediationRecipientMessageHandler(),
-            new PickupMediatorMessageHandler(),
             new PickupRecipientMessageHandler(),
             new RoutingMessageHandler(),
         ],

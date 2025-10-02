@@ -4,11 +4,12 @@ import {agentMediator } from '../src/veramoAgentMediator.js'
 import { DIDCommMessageMediaType, Update, UpdateAction} from '@veramo/did-comm'
 import { createV3DeliveryRequestMessage, createV3MediateRequestMessage, createV3RecipientUpdateMessage } from '@veramo/did-comm'
 import { v4 as uuidv4 } from 'uuid'
-//import {mediatorDID, holder1DID, holder2DID} from './testSetup.js'
+import { listMessages, printDID } from './utils.js'
+import {asArray} from '@veramo/utils'
 
-const mediatorDID = 'did:ethr:sepolia:0x03dc145a72ae45a6658f786a133df86ea7ae77aeeaf38607e6b0fbfb3cc83d36f1'
-const holder1DID = 'did:ethr:sepolia:0x03de483561f3a325411fda2a6c3d743cd0f225d9ee5a0027b8350ff978eb7b7479'
-const holder2DID = 'did:ethr:sepolia:0x02d19e208dc0af0ff08b6658c67d6a9c53afdf6094ad58eddec528c0b2ce6684be'
+const mediatorDID = 'did:ethr:sepolia:0x026a6196d546a2044a27425432b0e11578aa1ed7208177f59e87ed7ba0195eb088'
+const holder1DID = 'did:ethr:sepolia:0x0260e9eaed455068c992f3602cfca1f5e5718f52f483155613ba5a745b41cb7075'
+const holder2DID = 'did:ethr:sepolia:0x03b554e744ef20480dd7887a66cebe5d9ca38c7a7cdff873c6fe833d921a170cad'
 
 // ------------------------------------------------------------------------------------------------------------
 // --------------------------------------- HELPER FUNCTIONS -------------------------------------------------
@@ -84,20 +85,37 @@ async function addAllowedSender(recipientDID: string, agent: any): Promise<void>
 async function registerWithMediator(agent : any, holderDID: string) {
     try{
         const mediateRequest = createV3MediateRequestMessage(holderDID, mediatorDID)
-
         const packedMessage = await agent.packDIDCommMessage({
         packing: 'authcrypt',
         message: mediateRequest,
         })
 
-        const response = await agent.sendDIDCommMessage({
+        const res = await agent.sendDIDCommMessage({
         messageId: mediateRequest.id,
         packedMessage,
         recipientDidUrl: mediatorDID,
+        returnRoute: 'all',
         })
-        console.log('Risposta mediatore:', response)
+        if (res?.returnMessage) {
+          await agent.dataStoreSaveMessage({
+            message: {
+              type: mediateRequest.type,
+              from: mediateRequest.from,
+              to: asArray(mediateRequest.to)[0],
+              id: mediateRequest.id,
+              threadId: mediateRequest.thid,
+              data: mediateRequest.body,
+              createdAt: mediateRequest.created_time
+            },
+          })
+          const handled = await agent.handleMessage({
+            raw: typeof res.returnMessage === 'string' ? res.returnMessage.raw : JSON.stringify(res.returnMessage.raw),
+            save: true,
+          })       
+        }
+ 
     } catch (err) {
-        console.error('Errore connessione con il mediatore:', err)
+        console.error('Errore nella registrazione:', err)
     }
 }
 
@@ -105,5 +123,6 @@ async function registerWithMediator(agent : any, holderDID: string) {
 // ------------------------------------------- REGISTRATION -------------------------------------------------
 
 await registerWithMediator(agentClient1, holder1DID)
-
+//await listMessages(agentClient1)
+//await printDID('holder1', agentClient1)
 

@@ -29,13 +29,11 @@ import {
 // Handler Veramo per il protocollo Coordinate Mediation v3 
 import {
   CoordinateMediationV3MediatorMessageHandler,
-  CoordinateMediationV3RecipientMessageHandler,
   DIDComm,
   DIDCommHttpTransport,
   DIDCommMessageHandler,
   IDIDComm,
   PickupMediatorMessageHandler,
-  PickupRecipientMessageHandler,
   RoutingMessageHandler,
 } from '@veramo/did-comm'
 
@@ -105,10 +103,6 @@ const mediationManager = new MediationManagerPlugin(
   recipientDidStore
 )
 
-// Gli handler Coordinate Mediation V3 
-  const mediatorH = new CoordinateMediationV3MediatorMessageHandler()
-  const recipientH = new CoordinateMediationV3RecipientMessageHandler()
-
 // ---------------------------------------------------------------------------------------------------------------
 // -------------------------------------------------  AGENT ------------------------------------------------------
 
@@ -154,10 +148,8 @@ export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore 
           new MessageHandler({
                   messageHandlers: [
                   new DIDCommMessageHandler(),
-                  mediatorH,
-                  recipientH,
+                  new CoordinateMediationV3MediatorMessageHandler(),
                   new PickupMediatorMessageHandler(),
-                  new PickupRecipientMessageHandler(),
                   new RoutingMessageHandler(),
               ],
           }),
