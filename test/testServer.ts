@@ -13,8 +13,72 @@ const holder2DID = 'did:ethr:sepolia:0x03b554e744ef20480dd7887a66cebe5d9ca38c7a7
 
 // ------------------------------------------------------------------------------------------------------------
 // --------------------------------------- HELPER FUNCTIONS -------------------------------------------------
+async function mediateRequestV3(agent : any, holderDID: string) {
+    try{
+        const mediateRequest = createV3MediateRequestMessage(holderDID, mediatorDID)
+        const packedMessage = await agent.packDIDCommMessage({
+        packing: 'authcrypt',
+        message: mediateRequest,
+        })
 
-async function sendMessage(senderDID: string, recipientDID: string, body: any, agent: any): Promise<any> {
+        const res = await agent.sendDIDCommMessage({
+        messageId: mediateRequest.id,
+        packedMessage,
+        recipientDidUrl: mediatorDID,
+        })
+        console.log(res)
+        if (res?.returnMessage) {
+          await agent.dataStoreSaveMessage({
+            message: {
+              type: mediateRequest.type,
+              from: mediateRequest.from,
+              to: asArray(mediateRequest.to)[0],
+              id: mediateRequest.id,
+              data: mediateRequest.body,
+              createdAt: mediateRequest.created_time
+            },
+          })
+          const handled = await agent.handleMessage({
+            raw: typeof res.returnMessage === 'string' ? res.returnMessage.raw : JSON.stringify(res.returnMessage.raw),
+            save: true,
+          })
+          console.log('Adding mediator service to DID Document')
+          const prevRequestMsg = await agent.dataStoreGetMessage({ id: res.returnMessage.threadId })
+          console.log(prevRequestMsg)
+          console.log('Adding mediator service to DID Document')
+          if (prevRequestMsg.from === res.returnMessage.to && prevRequestMsg.to === res.returnMessage.from) {
+                      console.log('Adding mediator service to DID Document')
+            const service = {
+              id: 'didcomm-mediator',
+              type: 'DIDCommMessaging',
+              serviceEndpoint: [
+                {
+                  uri: res.returnMessage.data.routing_did[0],
+                },
+              ],
+            }
+            await agent.didManagerAddService({
+              did: holderDID,
+              service: service,
+            })  
+          }     
+        }
+ 
+    } catch (err) {
+        console.error('Errore nella registrazione:', err)
+    }
+}
+
+
+async function recipientUpdateV3(recipientDID: string, agent: any): Promise<void> {
+  try {
+
+  } catch (err) {
+    console.error('Errore aggiunta sender:', err)
+  }
+ }
+
+async function sendDIDCommMessage(senderDID: string, recipientDID: string, body: any, agent: any): Promise<any> {
     try {
         const message = {
         type: 'application/didcomm-plain+json',
@@ -43,7 +107,7 @@ async function sendMessage(senderDID: string, recipientDID: string, body: any, a
     }
 }
 
-async function receiveMessages (holderDID: string, agent: any) : Promise<any[]> {
+async function receiveDIDCommMessages (holderDID: string, agent: any) : Promise<any[]> {
     const deliveryRequest = createV3DeliveryRequestMessage(holderDID, mediatorDID)
 
     const packedRequest = await agent.packDIDCommMessage({
@@ -67,62 +131,12 @@ async function receiveMessages (holderDID: string, agent: any) : Promise<any[]> 
   return messages
 }
 
-async function addAllowedSender(recipientDID: string, agent: any): Promise<void> {
-  try {
-    const update: Update = { recipient_did: recipientDID, action: UpdateAction.ADD }
-    const updateMessage = createV3RecipientUpdateMessage(recipientDID, mediatorDID, [update])
-    const updateMessageContents = { packing: 'authcrypt', message: updateMessage } as const
-    const packedUpdateMessage = await agent.packDIDCommMessage(updateMessageContents)
-    await agent.sendDIDCommMessage({
-      messageId: updateMessage.id,
-      packedMessage: packedUpdateMessage,
-      recipientDidUrl : mediatorDID,
-    })
-  } catch (err) {
-    console.error('Errore aggiunta sender:', err)
-  }
- }
-async function registerWithMediator(agent : any, holderDID: string) {
-    try{
-        const mediateRequest = createV3MediateRequestMessage(holderDID, mediatorDID)
-        const packedMessage = await agent.packDIDCommMessage({
-        packing: 'authcrypt',
-        message: mediateRequest,
-        })
-
-        const res = await agent.sendDIDCommMessage({
-        messageId: mediateRequest.id,
-        packedMessage,
-        recipientDidUrl: mediatorDID,
-        returnRoute: 'all',
-        })
-        if (res?.returnMessage) {
-          await agent.dataStoreSaveMessage({
-            message: {
-              type: mediateRequest.type,
-              from: mediateRequest.from,
-              to: asArray(mediateRequest.to)[0],
-              id: mediateRequest.id,
-              threadId: mediateRequest.thid,
-              data: mediateRequest.body,
-              createdAt: mediateRequest.created_time
-            },
-          })
-          const handled = await agent.handleMessage({
-            raw: typeof res.returnMessage === 'string' ? res.returnMessage.raw : JSON.stringify(res.returnMessage.raw),
-            save: true,
-          })       
-        }
- 
-    } catch (err) {
-        console.error('Errore nella registrazione:', err)
-    }
-}
-
 // ------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- REGISTRATION -------------------------------------------------
 
-await registerWithMediator(agentClient1, holder1DID)
-//await listMessages(agentClient1)
-//await printDID('holder1', agentClient1)
-
+/*
+await mediateRequestV3(agentClient1, holder1DID)
+await mediateRequestV3(agentClient2, holder2DID)
+await listMessages(agentClient1)
+await printDID('holder2', agentClient2)
+*/

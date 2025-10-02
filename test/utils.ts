@@ -52,7 +52,7 @@ export async function printDID(alias: string, agent : any) {
     const identifier = identifiers[0]
     
     console.log(`DID for ${alias}: ${identifier.did}`)
-    console.log('Service Endpoints:', identifier.service)
+    console.log('Service Endpoints:', identifier.services)
 
   } catch (error) {
     console.error('Error finding address:', error.message)
@@ -65,7 +65,14 @@ export async function listMessages(agent: any) : Promise<any[]> {
     let i = 0
     messages.forEach(msg => {
       i++
-      console.log(`Message ${i}: ${msg.id} - Type: ${msg.type} - From: ${msg.from} - To: ${msg.to} - ThreadID: ${msg.threadId}`)
+      console.log('---------------------------------')
+      console.log(`Message ${i}:`)
+      console.log(`- ID: ${msg.id}`)
+      console.log(`- Type: ${msg.type}`) 
+      console.log(`- From: ${msg.from}`) 
+      console.log(`- To: ${msg.to}`) 
+      console.log(`- ThreadID: ${msg.threadId}`)
+      console.log('---------------------------------')
     })
     return messages
   }
