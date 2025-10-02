@@ -1,7 +1,7 @@
 import {agent as agentClient1} from '../src/veramoAgentClient1.js' 
 import {agent as agentClient2} from '../src/veramoAgentClient2.js' 
 import {agentMediator } from '../src/veramoAgentMediator.js'
-import { DIDCommMessageMediaType, Update, UpdateAction} from '@veramo/did-comm'
+import { createV3RecipientQueryMessage, Update, UpdateAction} from '@veramo/did-comm'
 import { createV3DeliveryRequestMessage, createV3MediateRequestMessage, createV3RecipientUpdateMessage } from '@veramo/did-comm'
 import { v4 as uuidv4 } from 'uuid'
 import { listMessages, printDID } from './utils.js'
@@ -13,18 +13,18 @@ const holder2DID = 'did:ethr:sepolia:0x03b554e744ef20480dd7887a66cebe5d9ca38c7a7
 
 // ------------------------------------------------------------------------------------------------------------
 // --------------------------------------- HELPER FUNCTIONS -------------------------------------------------
-async function mediateRequestV3(agent : any, holderDID: string) {
+async function sendMediateRequestV3(agent : any, holderDID: string) {
     try{
         const mediateRequest = createV3MediateRequestMessage(holderDID, mediatorDID)
         const packedMessage = await agent.packDIDCommMessage({
-        packing: 'authcrypt',
-        message: mediateRequest,
+          packing: 'authcrypt',
+          message: mediateRequest,
         })
 
         const res = await agent.sendDIDCommMessage({
-        messageId: mediateRequest.id,
-        packedMessage,
-        recipientDidUrl: mediatorDID,
+          messageId: mediateRequest.id,
+          packedMessage,
+          recipientDidUrl: mediatorDID,
         })
         console.log(res)
         if (res?.returnMessage) {
@@ -42,12 +42,8 @@ async function mediateRequestV3(agent : any, holderDID: string) {
             raw: typeof res.returnMessage === 'string' ? res.returnMessage.raw : JSON.stringify(res.returnMessage.raw),
             save: true,
           })
-          console.log('Adding mediator service to DID Document')
           const prevRequestMsg = await agent.dataStoreGetMessage({ id: res.returnMessage.threadId })
-          console.log(prevRequestMsg)
-          console.log('Adding mediator service to DID Document')
           if (prevRequestMsg.from === res.returnMessage.to && prevRequestMsg.to === res.returnMessage.from) {
-                      console.log('Adding mediator service to DID Document')
             const service = {
               id: 'didcomm-mediator',
               type: 'DIDCommMessaging',
@@ -70,9 +66,77 @@ async function mediateRequestV3(agent : any, holderDID: string) {
 }
 
 
-async function recipientUpdateV3(recipientDID: string, agent: any): Promise<void> {
+async function sendRecipientUpdateV3(holderDID: string, agent: any): Promise<void> {
   try {
+      const update : Update = { 
+        recipient_did: holderDID, 
+        action: UpdateAction.ADD 
+      }
+      const recipientUpdate = createV3RecipientUpdateMessage(holderDID, mediatorDID, [update])
 
+      const packedMessage = await agent.packDIDCommMessage({
+        packing: 'authcrypt',
+        message: recipientUpdate,
+      })
+
+      const res = await agent.sendDIDCommMessage({
+        messageId: recipientUpdate.id,
+        packedMessage,
+        recipientDidUrl: mediatorDID,
+      })
+      console.log(res)
+      if (res?.returnMessage) {
+        await agent.dataStoreSaveMessage({
+          message: {
+            type: recipientUpdate.type,
+            from: recipientUpdate.from,
+            to: asArray(recipientUpdate.to)[0],
+            id: recipientUpdate.id,
+            data: recipientUpdate.body,
+            createdAt: recipientUpdate.created_time
+          },
+        })
+        const handled = await agent.handleMessage({
+          raw: typeof res.returnMessage === 'string' ? res.returnMessage.raw : JSON.stringify(res.returnMessage.raw),
+          save: true,
+        })
+      }
+  } catch (err) {
+    console.error('Errore aggiunta sender:', err)
+  }
+ }
+
+ async function sendRecipientQueryV3(holderDID: string, agent: any): Promise<void> {
+  try {
+      const recipientQuery = createV3RecipientQueryMessage(holderDID, mediatorDID)
+
+      const packedMessage = await agent.packDIDCommMessage({
+        packing: 'authcrypt',
+        message: recipientQuery,
+      })
+
+      const res = await agent.sendDIDCommMessage({
+        messageId: recipientQuery.id,
+        packedMessage,
+        recipientDidUrl: mediatorDID,
+      })
+      console.log(res)
+      if (res?.returnMessage) {
+        await agent.dataStoreSaveMessage({
+          message: {
+            type: recipientQuery.type,
+            from: recipientQuery.from,
+            to: asArray(recipientQuery.to)[0],
+            id: recipientQuery.id,
+            data: recipientQuery.body,
+            createdAt: recipientQuery.created_time
+          },
+        })
+        const handled = await agent.handleMessage({
+          raw: typeof res.returnMessage === 'string' ? res.returnMessage.raw : JSON.stringify(res.returnMessage.raw),
+          save: true,
+        })
+      }
   } catch (err) {
     console.error('Errore aggiunta sender:', err)
   }
@@ -132,11 +196,31 @@ async function receiveDIDCommMessages (holderDID: string, agent: any) : Promise<
 }
 
 // ------------------------------------------------------------------------------------------------------------
-// ------------------------------------------- REGISTRATION -------------------------------------------------
+// ------------------------------------------- REGISTRATION ---------------------------------------------------
 
 /*
-await mediateRequestV3(agentClient1, holder1DID)
-await mediateRequestV3(agentClient2, holder2DID)
+await sendmediateRequestV3(agentClient1, holder1DID)
 await listMessages(agentClient1)
+await printDID('holder1', agentClient1)
+await sendmediateRequestV3(agentClient2, holder2DID)
+await listMessages(agentClient2)
 await printDID('holder2', agentClient2)
+*/
+
+// ----------------------------------------------------------------------------------------------------------------
+// ------------------------------------------- RECIPIENT UPDATE ---------------------------------------------------
+/*
+await sendRecipientUpdateV3(holder1DID, agentClient1)
+await listMessages(agentClient1)
+await sendRecipientUpdateV3(holder2DID, agentClient2)
+await listMessages(agentClient2)
+*/
+
+// ----------------------------------------------------------------------------------------------------------------
+// ------------------------------------------- RECIPIENT QUERY ---------------------------------------------------
+/*
+await sendRecipientQueryV3(holder1DID, agentClient1)
+await listMessages(agentClient1)
+await sendRecipientQueryV3(holder2DID, agentClient2)
+await listMessages(agentClient2)
 */
