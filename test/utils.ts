@@ -1,5 +1,5 @@
-import {agent as agentClient1} from '../src/veramoAgentClient1.js' 
-import {agent as agentClient2} from '../src/veramoAgentClient2.js' 
+import {agent as agentClient1} from '../src/veramoAgentHolder1.js' 
+import {agent as agentClient2} from '../src/veramoAgentHolder2.js' 
 import {agentMediator } from '../src/veramoAgentMediator.js'
 import dotenv from 'dotenv'
 import { ethers } from 'ethers'

@@ -29,7 +29,7 @@ const infuraProjectId = process.env.INFURA_PROJECT_ID
 const secretKey = process.env.API_SECRET_KEY
 const dbConnection = await new DataSource({
     type: 'sqlite',
-    database: 'client2.sqlite',
+    database: 'holder2.sqlite',
     synchronize: false,
     migrations: migrations,
     migrationsRun: true,

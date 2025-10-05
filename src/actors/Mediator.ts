@@ -1,6 +1,7 @@
 import { agentMediator} from "../veramoAgentMediator.js";
 import express from 'express'
 import bodyParser from 'body-parser'
+import cors from 'cors'
 
 const app = express()
 app.use('/didcomm', bodyParser.text({
@@ -12,6 +13,8 @@ app.use('/didcomm', bodyParser.text({
     'application/json' 
   ]
 }))
+
+//app.use(cors())
 
 app.post('/didcomm', async (req, res) => {
   try {
@@ -32,15 +35,12 @@ app.post('/didcomm', async (req, res) => {
   }
 })
 
-// Avvio il server e inizializza l'agente
 export async function startMediator(port: number) {
   try {
-    // Avvio il server Express
     app.listen(port, () => {
       console.log(`\nServer DIDComm avviato su http://localhost:${port}`)
       console.log('\nEndpoints disponibili:')
       console.log('  POST /didcomm   - Invia un messaggio DIDComm')
-      console.log('  GET  /messages   - Ricevi messaggi DIDComm in coda')
       console.log('\n' + '='.repeat(50))
     })
     

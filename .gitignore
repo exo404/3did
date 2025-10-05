@@ -1,9 +1,9 @@
 node_modules
 yarn.lock
 package.json
-client1.sqlite
-client2.sqlite
-mediation.sqlite
+holder1.sqlite
+holder2.sqlite
+mediator.sqlite
 .env
 .vscode
 .DS_Store

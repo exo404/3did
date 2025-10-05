@@ -68,7 +68,7 @@ const secretKey = process.env.MEDIATOR_SECRET_KEY
 const dbConnection = new DataSource({
   name: 'mediator',
   type: 'sqlite',
-  database: './mediation.sqlite',
+  database: './mediator.sqlite',
   synchronize: false,
   migrations: [...migrations ,...kvStoreMigrations],
   migrationsRun: true,
