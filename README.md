@@ -68,5 +68,5 @@ Note that you'll use HTTP instead of HTTPS because Anvil doesn't use TLS
 http://127.0.0.1:8545
 ```
 
-## Sequence Diagram for V1
+## Sequence Diagram for the Triangle of Trust flow
 <img width="682" height="1334" alt="image" src="https://github.com/user-attachments/assets/b5243968-277a-441d-82d4-3893fad85436" />
