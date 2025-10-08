@@ -19,7 +19,6 @@ export async function sendMediateRequestV3(agent : any, holderDID: string, media
           packedMessage,
           recipientDidUrl: mediatorDID,
         })
-        console.log(res)
         if (res?.returnMessage) {
           await agent.dataStoreSaveMessage({
             message: {
@@ -37,6 +36,7 @@ export async function sendMediateRequestV3(agent : any, holderDID: string, media
           })
           const prevRequestMsg = await agent.dataStoreGetMessage({ id: res.returnMessage.threadId })
           if (prevRequestMsg.from === res.returnMessage.to && prevRequestMsg.to === res.returnMessage.from) {
+            console.log('Aggiornamento endpoint', holderDID)
             const service = {
               id: 'didcomm-mediator',
               type: 'DIDCommMessaging',
@@ -77,7 +77,6 @@ export async function sendRecipientUpdateV3(holderDID: string, agent: any, media
         packedMessage,
         recipientDidUrl: mediatorDID,
       })
-      console.log(res)
       if (res?.returnMessage) {
         await agent.dataStoreSaveMessage({
           message: {
@@ -113,7 +112,6 @@ export async function sendRecipientUpdateV3(holderDID: string, agent: any, media
         packedMessage,
         recipientDidUrl: mediatorDID,
       })
-      console.log(res)
       if (res?.returnMessage) {
         await agent.dataStoreSaveMessage({
           message: {
@@ -143,15 +141,13 @@ export async function sendDIDCommMessage(senderDID: string, recipientDID: string
             from: senderDID,
             to: [recipientDID],
             id: uuidv4(),
-            body: body,
-            return_route: 'all',
+            body: body
         }
 
         const packedMsg = await agent.packDIDCommMessage({
-            packing: 'authcrypt',
+            packing: 'anoncrypt',
             message: msg,
         })
-
         if (packedMsg) {
         const response = await agent.sendDIDCommMessage({
             messageId: msg.id,
