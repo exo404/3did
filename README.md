@@ -67,6 +67,9 @@ Note that you'll use HTTP instead of HTTPS because Anvil doesn't use TLS
 ```bash
 http://127.0.0.1:8545
 ```
+## W3C VC implementation
+### [Veramo docs](https://deepwiki.com/decentralized-identity/veramo/5.1-verifiable-credentials) 
+<img width="682" height="751" alt="image" src="https://github.com/user-attachments/assets/c4f46482-9552-4cfe-b509-506aa74283aa" />
 
 ## Sequence Diagram for the Triangle of Trust flow
 <img width="682" height="1334" alt="image" src="https://github.com/user-attachments/assets/b5243968-277a-441d-82d4-3893fad85436" />
