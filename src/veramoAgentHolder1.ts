@@ -1,7 +1,8 @@
 // ----------------------------------------------------------------------------------------------------
 // ------------------------------------------- IMPORT -------------------------------------------------
 
-import { createAgent, TAgent, IAgentOptions } from "@veramo/core"
+// ....-------------------------- VERAMO ------------------------------
+import { createAgent} from "@veramo/core"
 import { IDIDManager, IResolver} from "@veramo/core"
 import { IDataStore, IDataStoreORM} from "@veramo/core"
 import { IKeyManager, ICredentialPlugin} from "@veramo/core"
@@ -18,8 +19,13 @@ import { EthrDIDProvider } from "@veramo/did-provider-ethr"
 import { Resolver } from 'did-resolver'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
 import { MessageHandler } from "@veramo/message-handler"
-import { CredentialPlugin } from "@veramo/credential-w3c"
+import { CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
+
+// ---------------------------- UTILS ---------------------------------
 import dotenv from 'dotenv'
+
+// ------------------------------------------- SD-JWT -------------------------------------------------
+
 
 // -----------------------------------------------------------------------------------------------------
 // ------------------------------------------- DB INIT -------------------------------------------------
@@ -100,6 +106,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
             new CoordinateMediationRecipientMessageHandler(),
             new PickupRecipientMessageHandler(),
             new RoutingMessageHandler(),
+            new W3cMessageHandler(),
         ],
         }),
         new DIDComm({ transports: [new DIDCommHttpTransport()] }),
@@ -112,4 +119,3 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
         }),
     ]
 })
-  

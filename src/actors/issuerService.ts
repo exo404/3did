@@ -1,20 +1,23 @@
-import { agentMediator} from '../veramoAgentMediator.js'
-import { agent as agentClient1} from '../veramoAgentHolder1.js'
-import { agent as agentClient2} from '../veramoAgentHolder2.js'
+import { Claims } from "./verifierService.js"
+import { v4 as uuidv4 } from 'uuid'
 
-export async function createVC(agent: any) {
-  const identifier = await agent.didManagerGetByAlias({ alias: 'default' })
-
-  const verifiableCredential = await agent.createVerifiableCredential({
+export async function createVC(agent: any, credentialSubject: Claims, issuerDID: string): Promise<Credential> {
+  // Create a new verifiable credential
+  const credential = await agent.createVerifiableCredential({
     credential: {
-      issuer: { id: identifier.did },
-      credentialSubject: {
-        id: 'did:ethr:exo404.com',
-        you: 'exo404',
-      },
+      // Required fields
+      id: uuidv4(),
+      issuer: issuerDID,
+      '@context': ['https://www.w3.org/2018/credentials/v1'],
+      type: ['VerifiableCredential'],
+      credentialSubject: credentialSubject,
+      // Optional fields
+      issuanceDate: new Date().toISOString(),
+      validFrom: new Date().toISOString(),
     },
-    proofFormat: 'jwt',
+    // Options
+    proofFormat: 'jwt', 
+    save: false, 
   })
-  console.log(`New VC created`)
-  console.log(JSON.stringify(verifiableCredential, null, 2))
+  return credential
 }

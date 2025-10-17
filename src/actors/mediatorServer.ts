@@ -1,6 +1,7 @@
 import { agentMediator} from "../veramoAgentMediator.js";
 import express from 'express'
 import bodyParser from 'body-parser'
+import {asArray} from '@veramo/utils'
 import cors from 'cors'
 
 const app = express()
@@ -18,15 +19,31 @@ app.use('/didcomm', bodyParser.text({
 
 app.post('/didcomm', async (req, res) => {
   try {
-    console.log('Messaggio DIDComm ricevuto')
     const handled = await agentMediator.handleMessage({
       raw: typeof req.body === 'string' ? req.body : JSON.stringify(req.body),
       save: true,
     })
     const rr = handled?.metaData?.find?.(m => m?.type === 'ReturnRouteResponse')
+
+    // Se c'è ReturnRouteResponse, è una richiesta al mediatore
     if (rr?.value) {
       const { message, contentType } = JSON.parse(rr.value)
       res.status(200).type(contentType).send(message)
+      return
+    }
+    // Se non c'è ReturnRouteResponse è un message da conservare in coda
+    else {
+      await agentMediator.dataStoreSaveMessage({
+        message: {
+          type: handled.type,
+          from: handled.from,
+          to: asArray(handled.to)[0],
+          id: handled.id,
+          data: handled.data,
+          createdAt: handled.createdAt
+        },
+      })
+      res.status(200).send('Messaggio DIDComm gestito senza ReturnRouteResponse')
       return
     }
   } catch (e) {

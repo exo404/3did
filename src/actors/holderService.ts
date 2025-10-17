@@ -1,5 +1,3 @@
-import { IIdentifier } from '@veramo/core'
-
 export async function createDID(alias: string, agent : any): Promise<string>{
   try {
     console.log(`Creazione nuovo DID per alias "${alias}"...`)
@@ -38,4 +36,33 @@ export async function addKeyToDID(alias: string, agent: any): Promise<string> {
     console.error(`Errore nell'aggiunta della chiave al DID "${alias}":`, error)
     throw error
   }
+}
+/*------------------------------------------- VERAMO SELECTIVE DISCLOSURE ---------------------------------
+export async function createSdrPresentation(agent : any, holderDid: string, verifierDid: string, sdr: any): Promise<string> {
+  const credentialsForSdr = await agent.getVerifiableCredentialsForSdr({
+    sdr: sdr.data
+  })
+
+  const presentation = await agent.createVerifiablePresentation({
+    presentation: {
+      holder: holderDid,
+      verifier: [verifierDid],
+      verifiableCredential: credentialsForSdr[0].credentials.map(c => c.verifiableCredential),
+    },
+    proofFormat: 'jwt'
+  })
+  return presentation
+}
+-------------------------------------------------------------------------------------------------------------*/
+export async function createPresentation(agent : any, holderDid: string, verifierDid: string, verifiableCredential: any): Promise<string> {
+
+  const presentation = await agent.createVerifiablePresentation({
+    presentation: {
+      holder: holderDid,
+      verifier: [verifierDid],
+      verifiableCredential: [verifiableCredential],
+    },
+    proofFormat: 'jwt'
+  })
+  return presentation
 }

@@ -20,7 +20,7 @@ import { Resolver } from 'did-resolver'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
 import { MessageHandler } from "@veramo/message-handler"
 import { CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
-
+import { ISelectiveDisclosure, SelectiveDisclosure , SdrMessageHandler} from "@veramo/selective-disclosure"
 
 // ---------------------------- UTILS ---------------------------------
 import dotenv from 'dotenv'
@@ -33,7 +33,7 @@ const infuraProjectId = process.env.INFURA_PROJECT_ID
 const secretKey = process.env.API_SECRET_KEY
 const dbConnection = await new DataSource({
     type: 'sqlite',
-    database: 'holder2.sqlite',
+    database: 'holder1.sqlite',
     synchronize: false,
     migrations: migrations,
     migrationsRun: true,
@@ -41,12 +41,11 @@ const dbConnection = await new DataSource({
     entities: Entities,
   }).initialize()
 
-
 // -----------------------------------------------------------------------------------------------------
 // ------------------------------------------- AGENT ---------------------------------------------------
 
 export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IDataStoreORM & IResolver &IMessageHandler 
-                            & IDIDComm & ICredentialPlugin & IDIDDiscovery>
+                            & IDIDComm & ICredentialPlugin & IDIDDiscovery & ISelectiveDisclosure>
 ({
     plugins: [
         new KeyManager({
@@ -106,6 +105,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
             new PickupRecipientMessageHandler(),
             new RoutingMessageHandler(),
             new W3cMessageHandler(),
+            new SdrMessageHandler(),
         ],
         }),
         new DIDComm({ transports: [new DIDCommHttpTransport()] }),
@@ -116,6 +116,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
                 new DataStoreDiscoveryProvider(),
             ],
         }),
+        new SelectiveDisclosure()
     ]
 })
   

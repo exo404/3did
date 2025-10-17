@@ -2,6 +2,22 @@ import { createV3RecipientQueryMessage, Update, UpdateAction} from '@veramo/did-
 import { createV3DeliveryRequestMessage, createV3MediateRequestMessage, createV3RecipientUpdateMessage } from '@veramo/did-comm'
 import { v4 as uuidv4 } from 'uuid'
 import {asArray} from '@veramo/utils'
+import { createPresentation} from './holderService.js'
+import { Message } from '@veramo/message-handler'
+import { verifyVP } from './verifierService.js'
+
+export enum DIDCommBodyTypes{
+  BASIC_MESSAGE = 'https://didcomm.org/basicmessage/2.0/message',
+  CREDENTIAL_ISSUE = 'https://didcomm.org/issue-credential/2.0/issue-credential',
+  PRESENTATION = 'https://didcomm.org/present-proof/2.0/presentation',
+  SDR_REQUEST = 'https://didcomm.org/selective-disclosure/1.0/request',
+}
+
+export interface DIDCommHandleResult {
+  type: DIDCommBodyTypes | undefined,
+  result: any
+} 
+
 
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -19,7 +35,6 @@ export async function sendMediateRequestV3(agent : any, holderDID: string, media
           packedMessage,
           recipientDidUrl: mediatorDID,
         })
-        console.log(res)
         if (res?.returnMessage) {
           await agent.dataStoreSaveMessage({
             message: {
@@ -37,6 +52,7 @@ export async function sendMediateRequestV3(agent : any, holderDID: string, media
           })
           const prevRequestMsg = await agent.dataStoreGetMessage({ id: res.returnMessage.threadId })
           if (prevRequestMsg.from === res.returnMessage.to && prevRequestMsg.to === res.returnMessage.from) {
+            console.log('Aggiornamento endpoint', holderDID)
             const service = {
               id: 'didcomm-mediator',
               type: 'DIDCommMessaging',
@@ -77,7 +93,6 @@ export async function sendRecipientUpdateV3(holderDID: string, agent: any, media
         packedMessage,
         recipientDidUrl: mediatorDID,
       })
-      console.log(res)
       if (res?.returnMessage) {
         await agent.dataStoreSaveMessage({
           message: {
@@ -113,7 +128,6 @@ export async function sendRecipientUpdateV3(holderDID: string, agent: any, media
         packedMessage,
         recipientDidUrl: mediatorDID,
       })
-      console.log(res)
       if (res?.returnMessage) {
         await agent.dataStoreSaveMessage({
           message: {
@@ -136,22 +150,20 @@ export async function sendRecipientUpdateV3(holderDID: string, agent: any, media
  }
 // --------------------------------------------------------------------------------------------------------------------------------
 // --------------------------------------- MESSAGE PICKUP V3 E ROUTING 2.0 --------------------------------------------------------
-export async function sendDIDCommMessage(senderDID: string, recipientDID: string, body: any, agent: any): Promise<void> {
+export async function sendDIDCommMessage(senderDID: string, recipientDID: string, body: any, type: DIDCommBodyTypes, agent: any): Promise<void> {
     try {
         const msg = {
-            type: 'https://didcomm.org/basicmessage/2.0/message',
+            type: type,
             from: senderDID,
             to: [recipientDID],
             id: uuidv4(),
-            body: body,
-            return_route: 'all',
+            body: body
         }
 
         const packedMsg = await agent.packDIDCommMessage({
-            packing: 'authcrypt',
+            packing: 'anoncrypt',
             message: msg,
         })
-
         if (packedMsg) {
         const response = await agent.sendDIDCommMessage({
             messageId: msg.id,
@@ -184,7 +196,87 @@ export async function receiveDIDCommMessages (holderDID: string, agent: any, med
       const msg = await agent.handleMessage({
         raw: JSON.stringify(attachment.data.json),
       })
-      messages.push(msg.data)
+      messages.push(msg)
     }
     return messages
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------------------
+// ------------------------------------------- HANDLE DIDCOMMBODYTYPES ----------------------------------------------------------------------
+
+export async function handleDIDCommMessage(msg: any, agent: any): Promise<DIDCommHandleResult> {
+  let result: any
+  switch (msg.type){
+    case DIDCommBodyTypes.BASIC_MESSAGE:
+      await agent.dataStoreSaveMessage({
+              message: {
+                type: msg.type,
+                from: msg.from,
+                to: asArray(msg.to)[0],
+                id: msg.id,
+                data: msg.data,
+                createdAt: msg.createdAt
+              },
+            })
+      console.log('Basic message salvato:', msg.data)
+      return {type: DIDCommBodyTypes.BASIC_MESSAGE, result: msg.data}
+
+    case DIDCommBodyTypes.CREDENTIAL_ISSUE:
+      await agent.dataStoreSaveMessage({
+        message: {
+          type: msg.type,
+          from: msg.from,
+          to: asArray(msg.to)[0],
+          id: msg.id,
+          data: msg.data,
+          createdAt: msg.createdAt
+        },
+      }) 
+      result = await agent.dataStoreSaveVerifiableCredential({
+        verifiableCredential: msg.data,
+        save: true,
+      })
+      console.log('Credential issue salvato:', msg.data)
+      return {type: DIDCommBodyTypes.CREDENTIAL_ISSUE, result: result}
+    
+    /* ------------------------------------------- VERAMO SELECTIVE DISCLOSURE ---------------------------------
+    case DIDCommBodyTypes.SDR_REQUEST:
+      await agent.dataStoreSaveMessage({
+        message: {
+          type: msg.type,
+          from: msg.from,
+          to: asArray(msg.to)[0],
+          id: msg.id,
+          data: msg.data,
+          createdAt: msg.createdAt
+        },
+      })
+      console.log('SDR Request salvato:')
+      const presentation = await createSdrPresentation(agent, msg.to, msg.from, msg.data)
+      await sendDIDCommMessage(msg.from, msg.to, presentation, DIDCommBodyTypes.PRESENTATION, agent)
+      return {type: DIDCommBodyTypes.SDR_REQUEST, result: presentation}
+    --------------------------------------------------------------------------------------------------------------*/
+    case DIDCommBodyTypes.PRESENTATION:
+      await agent.dataStoreSaveMessage({
+        message: {
+          type: msg.type,
+          from: msg.from,
+          to: asArray(msg.to)[0],
+          id: msg.id,
+          data: msg.data,
+          createdAt: msg.createdAt
+        },
+      }) 
+      await agent.dataStoreSavePresentation({
+        presentation: msg.data.presentation,
+        save: true,
+      })
+      console.log('Presentation salvato:', msg.data)
+      result = await verifyVP(agent, msg.data.presentation, msg.data.sdr)
+      return {type: DIDCommBodyTypes.PRESENTATION, result : result}
+
+    default:
+      console.log('Messaggio non gestito:', msg)
+      return
+  }
 }
