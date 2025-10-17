@@ -2,13 +2,15 @@ import {agent as agentHolder1} from '../src/veramoAgentHolder1.js'
 import {agent as agentHolder2} from '../src/veramoAgentHolder2.js'
 import {agentMediator } from '../src/veramoAgentMediator.js'
 import { listMessages, printDID } from './utils.js'
-import '../src/actors/Recipient.js'
-import { sendMediateRequestV3, sendRecipientQueryV3, sendRecipientUpdateV3, receiveDIDCommMessages, sendDIDCommMessage } from '../src/actors/Recipient.js'
+import '../src/actors/recipient.js'
+import { sendMediateRequestV3, sendRecipientQueryV3, sendRecipientUpdateV3, receiveDIDCommMessages, sendDIDCommMessage, DIDCommBodyTypes } from '../src/actors/recipient.js'
 
-const mediatorDID = 'did:ethr:sepolia:0x029c8e232ebd379d72ad87adb2b9bb309cf88938888c473844feb252c446320a62'
-const holder1DID = 'did:ethr:sepolia:0x03ae96ec1ab1fdf4fcfb55a3d42aea13a76092ca975c613951f1d75e016992c3f9'
-const holder2DID = 'did:ethr:sepolia:0x03b161fa9bdfa30e2a7154e43b029808166706b40a972865ed82fce5d132710357'
+const holder1DID = 'did:ethr:sepolia:0x02ef3331beb1629cee28399e31d83b28f32217798afc8219ccf2033012adf1d22a';
+const holder2DID = 'did:ethr:sepolia:0x03701e98d0f5d255ae2781023087ef09a00a2f0459f78d162db920f83b063fbe7e';
+const mediatorDID = 'did:ethr:sepolia:0x034c4e4267b21021c7a8b8066091f1660f752af1e3c8398eda656c8ed4d0fdeeba';
 const body = 'Hello from Holder1 to Holder2 via Mediator'
+
+
 
 // ------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- REGISTRATION ---------------------------------------------------
@@ -44,11 +46,11 @@ await listMessages(agentHolder2)
 // ----------------------------------------------------------------------------------------------------------------
 // --------------------------------------- MESSAGE PICKUP V3 E ROUTING 2.0 ----------------------------------------
 
-await sendDIDCommMessage(holder1DID, holder2DID, body, agentHolder1)
+await sendDIDCommMessage(holder1DID, holder2DID, body, DIDCommBodyTypes.BASIC_MESSAGE, agentHolder1)
 
 const messages = await receiveDIDCommMessages(holder2DID, agentHolder2, mediatorDID)
 let i = 0
 for (const msg of messages) {
-  console.log(`Messaggio ${i} ricevuto da Holder2 :`, msg)
+  console.log(`Messaggio ${i} ricevuto da Holder2: `, msg)
   i++
 }

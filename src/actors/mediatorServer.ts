@@ -24,12 +24,14 @@ app.post('/didcomm', async (req, res) => {
       save: true,
     })
     const rr = handled?.metaData?.find?.(m => m?.type === 'ReturnRouteResponse')
+
+    // Se c'è ReturnRouteResponse, è una richiesta al mediatore
     if (rr?.value) {
       const { message, contentType } = JSON.parse(rr.value)
       res.status(200).type(contentType).send(message)
       return
     }
-    // Se non c'è ReturnRouteResponse è un basic message senza risposta
+    // Se non c'è ReturnRouteResponse è un message da conservare in coda
     else {
       await agentMediator.dataStoreSaveMessage({
         message: {

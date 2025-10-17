@@ -21,6 +21,7 @@ import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
 import { MessageHandler } from "@veramo/message-handler"
 import { CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
 
+
 // ---------------------------- UTILS ---------------------------------
 import dotenv from 'dotenv'
 
@@ -32,13 +33,14 @@ const infuraProjectId = process.env.INFURA_PROJECT_ID
 const secretKey = process.env.API_SECRET_KEY
 const dbConnection = await new DataSource({
     type: 'sqlite',
-    database: 'holder1.sqlite',
+    database: 'holder3.sqlite',
     synchronize: false,
     migrations: migrations,
     migrationsRun: true,
     logging: false,
     entities: Entities,
   }).initialize()
+
 
 // -----------------------------------------------------------------------------------------------------
 // ------------------------------------------- AGENT ---------------------------------------------------
