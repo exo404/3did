@@ -1,6 +1,5 @@
 node_modules
 yarn.lock
-package.json
 holder1.sqlite
 holder2.sqlite
 holder3.sqlite
