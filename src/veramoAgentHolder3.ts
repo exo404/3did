@@ -20,7 +20,7 @@ import { Resolver } from 'did-resolver'
 import { getResolver as ethrDidResolver } from 'ethr-did-resolver'
 import { MessageHandler } from "@veramo/message-handler"
 import { CredentialPlugin, W3cMessageHandler } from "@veramo/credential-w3c"
-
+import { CredentialSDJwt } from '@eengineer1/veramo-credential-sd-jwt'
 
 // ---------------------------- UTILS ---------------------------------
 import dotenv from 'dotenv'
@@ -116,6 +116,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
                 new DataStoreDiscoveryProvider(),
             ],
         }),
+        new CredentialSDJwt()
     ]
 })
   

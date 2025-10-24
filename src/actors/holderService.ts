@@ -1,3 +1,6 @@
+import { agent } from '../veramoAgentHolder3';
+import { SDJwt } from '@eengineer1/sd-jwt-ts-node';
+
 export async function createDID(alias: string, agent : any): Promise<string>{
   try {
     console.log(`Creazione nuovo DID per alias "${alias}"...`)
@@ -65,4 +68,16 @@ export async function createPresentation(agent : any, holderDid: string, verifie
     proofFormat: 'jwt'
   })
   return presentation
+}
+
+export async function createSdJwtPresentation(agent : any, holderDID: string, sdJwt: SDJwt): Promise<string> {
+  const { sdJwtPresentation, normalisedPresentation } = await agent.createVerifiablePresentationSDJwt({
+      presentation: {
+      verifiableCredential: [sdJwt.jwt],
+          holder: holderDID,
+      },
+      removeOriginalFields: true,
+      returnNormalisedPresentation: true,
+  })
+  return sdJwtPresentation
 }
