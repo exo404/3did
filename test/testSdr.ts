@@ -7,41 +7,47 @@ import { createSDJWT } from '../src/actors/issuerService.js'
 import { createSdJwtPresentation } from '../src/actors/holderService.js'
 import {DIDCommBodyTypes, handleDIDCommMessage, receiveDIDCommMessages, sendDIDCommMessage, sendMediateRequestV3, sendRecipientUpdateV3 } from '../src/actors/recipient.js'
 
-const issuerDID = 'did:ethr:sepolia:0x02ef3331beb1629cee28399e31d83b28f32217798afc8219ccf2033012adf1d22a';
-const holderDID = 'did:ethr:sepolia:0x03701e98d0f5d255ae2781023087ef09a00a2f0459f78d162db920f83b063fbe7e';
-const verifierDID = 'did:ethr:sepolia:0x023491e72aa01c1fe83d81218ac77f3440efda309c81d7ab4884b53226f7e2dc32';
-const mediatorDID = 'did:ethr:sepolia:0x034c4e4267b21021c7a8b8066091f1660f752af1e3c8398eda656c8ed4d0fdeeba';
+const issuerDID = 'did:ethr:sepolia:0x03c1a4ad1e5ffb93f2ea857f6098d7a88bc2b3b32e962566a8cf8408a70e368622';
+const holderDID = 'did:ethr:sepolia:0x0328e71d30dd823fa8afffe2a595326c0ac99eb1ff5254ac26c38a57c2e42093de';
+const verifierDID = 'did:ethr:sepolia:0x022235534d4ae813ca5359b1ea99d35a1325bb179ada324de878c4a0aeb7ae24fa';
+const mediatorDID = 'did:ethr:sepolia:0x03be9e926c02c390c6228e9b6f5fdf0d6338ecabe4b093390fa8592703872c75ca';
 
 const claims : UniversityClaims = {
   subjectDID: holderDID,
   id : uuidv4(),
-  studentID: 'M63001604',
+  studentID: 'M63001777',
   degreeType: 'LM-32',
   degreeName: 'Laurea Magistrale in Ingegneria Informatica',
   alumniOf: 'Università degli Studi di Napoli Federico II',
   name: 'Alberto',
   surname: 'Petillo',
   email: 'albertopetillo@hotmail.it',
-  phone: '+393349300837',
-  address: 'Via Libertà 134, 80055 Portici (NA), Italia',
+  phone: '+393347774441',
+  address: 'Via della Libertà, 777, Napoli, Italia',
   birthdate: '07/05/2002',
   documentID: '3V1T14M0'
 }
 
-const undisclosableClaims = {
-  
-}
+const undisclosedClaims = {
+  id: claims.id,
+  subjectDID: claims.subjectDID,
+  phone: claims.phone,
+  address: claims.address,
+  birthdate: claims.birthdate,
+  documentID: claims.documentID
+} 
 
 // ------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- REGISTRATION ---------------------------------------------------
 
+/*
 await sendMediateRequestV3(agentIssuer, issuerDID, mediatorDID)
 await sendMediateRequestV3(agentHolder, holderDID, mediatorDID)
 await sendMediateRequestV3(agentVerifier, verifierDID, mediatorDID)
 await sendRecipientUpdateV3(issuerDID, agentIssuer, mediatorDID)
 await sendRecipientUpdateV3(holderDID, agentHolder, mediatorDID)
 await sendRecipientUpdateV3(verifierDID, agentVerifier, mediatorDID)
-
+*/
 /* ----------------------------------------------- VERAMO SELECTIVE DISCLOSURE ------------------------------------------------------
 const claimsForSdr = [
     {
@@ -81,14 +87,16 @@ for (const msg of messages2) {
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- CREATE VC FROM ISSUER TO HOLDER ---------------------------------------------------
-const sdJwt = await createSDJWT(agentIssuer, )
-
-// ----------------------------------------------------------------------------------------------------------------------------------
-// ------------------------------------------- CREATE SDR FROM VERIFIER TO HOLDER ---------------------------------------------------
-
+const sdJwt = await createSDJWT(agentIssuer, claims, undisclosedClaims, issuerDID)
+await sendDIDCommMessage(issuerDID, holderDID, sdJwt, DIDCommBodyTypes.CREDENTIAL_ISSUE, agentIssuer)
+const messages = await receiveDIDCommMessages(holderDID, agentHolder, mediatorDID)
+for (const msg of messages) {
+  await handleDIDCommMessage(msg, agentHolder)
+}
 // ----------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- CREATE VP FROM HOLDER TO VERIFIER ----------------------------------------------------
-
+const sdJwtPresentation = await createSdJwtPresentation(agentHolder, holderDID, sdJwt)
+await sendDIDCommMessage(holderDID, verifierDID, sdJwtPresentation, DIDCommBodyTypes.PRESENTATION, agentHolder)
 const messages3 = await receiveDIDCommMessages(verifierDID, agentVerifier, mediatorDID)
 for (const msg of messages3) {
   await handleDIDCommMessage(msg, agentVerifier)

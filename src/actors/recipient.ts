@@ -2,9 +2,7 @@ import { createV3RecipientQueryMessage, Update, UpdateAction} from '@veramo/did-
 import { createV3DeliveryRequestMessage, createV3MediateRequestMessage, createV3RecipientUpdateMessage } from '@veramo/did-comm'
 import { v4 as uuidv4 } from 'uuid'
 import {asArray} from '@veramo/utils'
-import { createPresentation} from './holderService.js'
-import { Message } from '@veramo/message-handler'
-import { verifyVP } from './verifierService.js'
+import { verifyVPSdjwt } from './verifierService.js'
 
 export enum DIDCommBodyTypes{
   BASIC_MESSAGE = 'https://didcomm.org/basicmessage/2.0/message',
@@ -232,10 +230,12 @@ export async function handleDIDCommMessage(msg: any, agent: any): Promise<DIDCom
           createdAt: msg.createdAt
         },
       }) 
+      /*
       result = await agent.dataStoreSaveVerifiableCredential({
         verifiableCredential: msg.data,
         save: true,
       })
+      */
       console.log('Credential issue salvato:', msg.data)
       return {type: DIDCommBodyTypes.CREDENTIAL_ISSUE, result: result}
     
@@ -267,12 +267,14 @@ export async function handleDIDCommMessage(msg: any, agent: any): Promise<DIDCom
           createdAt: msg.createdAt
         },
       }) 
+      /*
       await agent.dataStoreSavePresentation({
-        presentation: msg.data.presentation,
+        presentation: msg.data,
         save: true,
       })
+      */
       console.log('Presentation salvato:', msg.data)
-      result = await verifyVP(agent, msg.data.presentation, msg.data.sdr)
+      result = await verifyVPSdjwt(agent, msg.data)
       return {type: DIDCommBodyTypes.PRESENTATION, result : result}
 
     default:

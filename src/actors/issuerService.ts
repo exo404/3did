@@ -1,6 +1,6 @@
 import { Claims } from "./verifierService.js"
 import { v4 as uuidv4 } from 'uuid'
-import { type JSONObject } from '@eengineer1/sd-jwt-ts-node'
+import { SDJwt, type JSONObject } from '@eengineer1/sd-jwt-ts-node'
 
 export async function createVC(agent: any, credentialSubject: Claims, issuerDID: string): Promise<Credential> {
   // Create a new verifiable credential
@@ -23,7 +23,7 @@ export async function createVC(agent: any, credentialSubject: Claims, issuerDID:
   return credential
 }
 
-export async function createSDJWT(agent: any, credentialClaims: Claims, undisclosedClaims : any, issuerDID: string): Promise<string> {
+export async function createSDJWT(agent: any, credentialClaims: Claims, undisclosedClaims : any, issuerDID: string): Promise<SDJwt> {
   const claimset = {
     id: uuidv4(),
     '@context': ['https://www.w3.org/2018/credentials/v1'],
@@ -34,7 +34,7 @@ export async function createSDJWT(agent: any, credentialClaims: Claims, undisclo
   const undisclosedClaimset = {
     '@context': claimset['@context'],
     type: claimset.type,
-    issuanceDate: 'anything-truthy',
+    issuanceDate: new Date().toISOString(),
     credentialSubject: undisclosedClaims
   } satisfies JSONObject
 
