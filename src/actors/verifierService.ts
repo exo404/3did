@@ -1,4 +1,5 @@
-import {ISelectiveDisclosureRequest } from "@veramo/selective-disclosure"
+import { ISelectiveDisclosureRequest } from "@veramo/selective-disclosure"
+import { SDJwt } from "@eengineer1/sd-jwt-ts-node" 
 
 export interface Claims{
     subjectDID: string
@@ -24,6 +25,13 @@ export async function verifyVC(agent: any, credential: any): Promise<boolean> {
     credential: credential
   })
   return result.verified
+}
+
+export async function verifySdJwt(agent: any, sdJwt: SDJwt): Promise<boolean> {
+  const { verified, message } = await agent.verifyVerifiableCredentialSDJwt({
+      credential: sdJwt.jwt,
+  })
+  return verified
 }
 
 /*------------------------------------------- VERAMO SELECTIVE DISCLOSURE -----------------------------
@@ -62,5 +70,14 @@ export async function verifyVP(agent: any, presentation: any, sdr: any): Promise
   })
   return result.verified
 }
+
+export async function verifyVPSdjwt(agent: any, sdJwtPresentation: string): Promise<boolean>{
+  const { verified, message } = await agent.verifyVerifiablePresentationSDJwt({
+      presentation: sdJwtPresentation,
+  })
+  return verified
+}
+
+
 
 

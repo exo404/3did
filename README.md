@@ -28,9 +28,9 @@ yarn add @veramo/core @veramo/data-store ethr-did-resolver @veramo/did-manager @
 yarn add sqlite3 typeorm reflect-metadata
 ```
 
-### Install express:
+### Install utilities:
 ```bash
-yarn add express
+yarn add express uuid dotenv cors @types/cors
 ```
 
 ### Create and save the secret key:
