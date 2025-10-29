@@ -20,9 +20,12 @@ export interface DIDCommHandleResult {
 
 // -----------------------------------------------------------------------------------------------------------------
 // --------------------------------------- COORDINATE MEDIATION V3 -------------------------------------------------
-export async function sendMediateRequestV3(agent : any, holderDID: string, mediatorDID: string): Promise<void> {
+export async function sendMediateRequestV3(agent : any, holderDID: string, mediatorDID: string, id: any): Promise<void> {
     try{
         const mediateRequest = createV3MediateRequestMessage(holderDID, mediatorDID)
+
+        mediateRequest.id = id 
+
         const packedMessage = await agent.packDIDCommMessage({
           packing: 'authcrypt',
           message: mediateRequest,
@@ -73,13 +76,15 @@ export async function sendMediateRequestV3(agent : any, holderDID: string, media
 }
 
 
-export async function sendRecipientUpdateV3(holderDID: string, agent: any, mediatorDID: string): Promise<void> {
+export async function sendRecipientUpdateV3(holderDID: string, agent: any, mediatorDID: string, id: any): Promise<void> {
   try {
       const update : Update = { 
         recipient_did: holderDID, 
         action: UpdateAction.ADD 
       }
       const recipientUpdate = createV3RecipientUpdateMessage(holderDID, mediatorDID, [update])
+
+      recipientUpdate.id = id 
 
       const packedMessage = await agent.packDIDCommMessage({
         packing: 'authcrypt',
@@ -112,9 +117,11 @@ export async function sendRecipientUpdateV3(holderDID: string, agent: any, media
   }
  }
 
- export async function sendRecipientQueryV3(holderDID: string, agent: any, mediatorDID: string): Promise<void> {
+ export async function sendRecipientQueryV3(holderDID: string, agent: any, mediatorDID: string, id: any): Promise<void> {
   try {
       const recipientQuery = createV3RecipientQueryMessage(holderDID, mediatorDID)
+
+      recipientQuery.id = id
 
       const packedMessage = await agent.packDIDCommMessage({
         packing: 'authcrypt',
@@ -148,13 +155,13 @@ export async function sendRecipientUpdateV3(holderDID: string, agent: any, media
  }
 // --------------------------------------------------------------------------------------------------------------------------------
 // --------------------------------------- MESSAGE PICKUP V3 E ROUTING 2.0 --------------------------------------------------------
-export async function sendDIDCommMessage(senderDID: string, recipientDID: string, body: any, type: DIDCommBodyTypes, agent: any): Promise<void> {
+export async function sendDIDCommMessage(senderDID: string, recipientDID: string, body: any, type: DIDCommBodyTypes, agent: any, id: any ): Promise<void> {
     try {
         const msg = {
             type: type,
             from: senderDID,
             to: [recipientDID],
-            id: uuidv4(),
+            id: id,  //uuidv4() I have to set the id from outside to capture it with Wireshark,
             body: body
         }
 
@@ -175,8 +182,10 @@ export async function sendDIDCommMessage(senderDID: string, recipientDID: string
     }
 }
 
-export async function receiveDIDCommMessages (holderDID: string, agent: any, mediatorDID: string) : Promise<any[]> {
+export async function receiveDIDCommMessages (holderDID: string, agent: any, mediatorDID: string, id: any) : Promise<any[]> {
     const deliveryRequest = createV3DeliveryRequestMessage(holderDID, mediatorDID)
+
+    deliveryRequest.id = id
 
     const packedRequest = await agent.packDIDCommMessage({
       packing: 'authcrypt',

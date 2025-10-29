@@ -40,14 +40,14 @@ const undisclosedClaims = {
 // ------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- REGISTRATION ---------------------------------------------------
 
-/*
-await sendMediateRequestV3(agentIssuer, issuerDID, mediatorDID)
-await sendMediateRequestV3(agentHolder, holderDID, mediatorDID)
-await sendMediateRequestV3(agentVerifier, verifierDID, mediatorDID)
-await sendRecipientUpdateV3(issuerDID, agentIssuer, mediatorDID)
-await sendRecipientUpdateV3(holderDID, agentHolder, mediatorDID)
-await sendRecipientUpdateV3(verifierDID, agentVerifier, mediatorDID)
-*/
+
+await sendMediateRequestV3(agentIssuer, issuerDID, mediatorDID, 'issuer-mediate-req')
+await sendMediateRequestV3(agentHolder, holderDID, mediatorDID, 'holder-mediate-req')
+await sendMediateRequestV3(agentVerifier, verifierDID, mediatorDID, 'verifier-mediate-req')
+await sendRecipientUpdateV3(issuerDID, agentIssuer, mediatorDID, 'issuer-recipient-update')
+await sendRecipientUpdateV3(holderDID, agentHolder, mediatorDID, 'holder-recipient-update')
+await sendRecipientUpdateV3(verifierDID, agentVerifier, mediatorDID, 'verifier-recipient-update')
+
 /* ----------------------------------------------- VERAMO SELECTIVE DISCLOSURE ------------------------------------------------------
 const claimsForSdr = [
     {
@@ -88,16 +88,16 @@ for (const msg of messages2) {
 // -------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- CREATE VC FROM ISSUER TO HOLDER ---------------------------------------------------
 const sdJwt = await createSDJWT(agentIssuer, claims, undisclosedClaims, issuerDID)
-await sendDIDCommMessage(issuerDID, holderDID, sdJwt, DIDCommBodyTypes.CREDENTIAL_ISSUE, agentIssuer)
-const messages = await receiveDIDCommMessages(holderDID, agentHolder, mediatorDID)
+await sendDIDCommMessage(issuerDID, holderDID, sdJwt, DIDCommBodyTypes.CREDENTIAL_ISSUE, agentIssuer, 'issuer-credential-issue')
+const messages = await receiveDIDCommMessages(holderDID, agentHolder, mediatorDID, 'holder-receive-credential')
 for (const msg of messages) {
   await handleDIDCommMessage(msg, agentHolder)
 }
 // ----------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------- CREATE VP FROM HOLDER TO VERIFIER ----------------------------------------------------
 const sdJwtPresentation = await createSdJwtPresentation(agentHolder, holderDID, sdJwt)
-await sendDIDCommMessage(holderDID, verifierDID, sdJwtPresentation, DIDCommBodyTypes.PRESENTATION, agentHolder)
-const messages3 = await receiveDIDCommMessages(verifierDID, agentVerifier, mediatorDID)
+await sendDIDCommMessage(holderDID, verifierDID, sdJwtPresentation, DIDCommBodyTypes.PRESENTATION, agentHolder, 'holder-presentation')
+const messages3 = await receiveDIDCommMessages(verifierDID, agentVerifier, mediatorDID, 'verifier-receive-presentation')
 for (const msg of messages3) {
   await handleDIDCommMessage(msg, agentVerifier)
 }

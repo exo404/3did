@@ -42,6 +42,34 @@ npx @veramo/cli config create-secret-key
 ```bash
 node --loader ts-node/esm ./src/YOUR_TEST.ts
 ```
+
+## Dockerized mediator server
+
+Build the container once:
+```bash
+docker build -t 3did-mediator .
+```
+
+Run the mediator inside Docker, binding port `3000` and loading the existing `.env` values:
+```bash
+docker run --rm -p 3000:3000 --env-file .env 3did-mediator
+```
+
+## Network capture & latency
+
+Capture mediator (port 3000) and Anvil (port 8545) traffic:
+```bash
+chmod +x capture.sh
+./capture.sh lo
+```
+Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
+```bash
+python analyze_latency.py captures/mediator_anvil_<timestamp>.pcap --details
+```
+The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, every request including HTTP info, the inferred Anvil JSON-RPC method or DIDComm message id, and the measured latency.
+
+> Nota: i messaggi DIDComm sono cifrati; se l'ID non è deducibile dal payload HTTP la colonna viene valorizzata con `unknown`.
+
 ## Local testnet deploy
 ### Install Anvil
 ```bash
