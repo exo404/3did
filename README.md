@@ -66,9 +66,7 @@ Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
 ```bash
 python analyze_latency.py captures/mediator_anvil_<timestamp>.pcap --details
 ```
-The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, every request including HTTP info, the inferred Anvil JSON-RPC method or DIDComm message id, and the measured latency.
-
-> Nota: i messaggi DIDComm sono cifrati; se l'ID non è deducibile dal payload HTTP la colonna viene valorizzata con `unknown`.
+The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
 
 ## Local testnet deploy
 ### Install Anvil
