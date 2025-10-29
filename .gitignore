@@ -7,3 +7,4 @@ mediator.sqlite
 .env
 .vscode
 .DS_Store
+captures
