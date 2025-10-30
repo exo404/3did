@@ -15,7 +15,7 @@ FILE_NAME="${TEST_NAME}_${DELAY}.pcap"
 
 mkdir -p "${OUTPUT_DIR}"
 
-CAPTURE_PATH="../${OUTPUT_DIR}/${FILE_NAME}"
+CAPTURE_PATH="${OUTPUT_DIR}/${FILE_NAME}"
 FILTER='tcp port 3000 or tcp port 8545'
 
 CMD_PREFIX=()
