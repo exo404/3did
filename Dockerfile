@@ -4,7 +4,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 build-essential ca-certificates \
+  && apt-get install -y --no-install-recommends python3 build-essential ca-certificates git \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json yarn.lock ./
