@@ -1,3 +1,7 @@
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
 import {agent as agentClient1} from '../src/veramoAgentHolder1.js'
 import {agent as agentClient2} from '../src/veramoAgentHolder2.js'
 import {agent as agentClient3} from '../src/veramoAgentHolder3.js'
@@ -74,7 +78,7 @@ export async function setupTest() : Promise<string []>{
     },
   }
 */
-  async function setupService(service: any, agent: any): Promise<void> {
+async function setupService(service: any, agent: any): Promise<void> {
       try {
         await agent.didManagerAddService(service)
         console.log('Servizio configurato')
@@ -89,10 +93,36 @@ export async function setupTest() : Promise<string []>{
 }
 
 
+function updateEnvFile([mediatorDid, holder1Did, holder2Did, holder3Did]: string[]): void {
+  const __filename = fileURLToPath(import.meta.url)
+  const envPath = path.resolve(path.dirname(__filename), '..', '.env')
+
+  const existing = fs.existsSync(envPath)
+    ? fs.readFileSync(envPath, 'utf-8').split(/\r?\n/)
+    : []
+
+  const ensure = (lines: string[], key: string, value: string): string[] => {
+    const assignment = `${key}=${value}`
+    const index = lines.findIndex((line) => line.startsWith(`${key}=`))
+    if (index >= 0) {
+      lines[index] = assignment
+      return lines
+    }
+    return [...lines, assignment]
+  }
+
+  let updated = existing.filter((line) => line.trim().length > 0)
+  updated = ensure(updated, 'MEDIATOR_DID', mediatorDid)
+  updated = ensure(updated, 'ISSUER_DID', holder1Did)
+  updated = ensure(updated, 'HOLDER_DID', holder2Did)
+  updated = ensure(updated, 'VERIFIER_DID', holder3Did)
+
+  fs.writeFileSync(envPath, `${updated.join('\n')}\n`, 'utf-8')
+  console.log(`Aggiornato .env: ${envPath}`)
+}
+
+
 // --------------------------------------------------------------------------------------------------------
 // --------------------------------------------- MAIN -----------------------------------------------------
 const setupDids = await setupTest()
-export const mediatorDID = setupDids[0]
-export const holder1DID = setupDids[1]
-export const holder2DID = setupDids[2]
-export const holder3DID = setupDids[3]
+updateEnvFile(setupDids)

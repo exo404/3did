@@ -7,10 +7,10 @@ import { createSDJWT } from '../src/actors/issuerService.js'
 import { createSdJwtPresentation } from '../src/actors/holderService.js'
 import {DIDCommBodyTypes, handleDIDCommMessage, receiveDIDCommMessages, sendDIDCommMessage, sendMediateRequestV3, sendRecipientUpdateV3 } from '../src/actors/recipient.js'
 
-const issuerDID = 'did:ethr:sepolia:0x03c1a4ad1e5ffb93f2ea857f6098d7a88bc2b3b32e962566a8cf8408a70e368622';
-const holderDID = 'did:ethr:sepolia:0x0328e71d30dd823fa8afffe2a595326c0ac99eb1ff5254ac26c38a57c2e42093de';
-const verifierDID = 'did:ethr:sepolia:0x022235534d4ae813ca5359b1ea99d35a1325bb179ada324de878c4a0aeb7ae24fa';
-const mediatorDID = 'did:ethr:sepolia:0x03be9e926c02c390c6228e9b6f5fdf0d6338ecabe4b093390fa8592703872c75ca';
+const mediatorDID = process.env.MEDIATOR_DID as string
+const issuerDID = process.env.ISSUER_DID as string
+const holderDID = process.env.HOLDER_DID as string
+const verifierDID = process.env.VERIFIER_DID as string
 
 const claims : UniversityClaims = {
   subjectDID: holderDID,
