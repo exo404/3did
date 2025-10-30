@@ -60,7 +60,7 @@ docker run --rm -p 3000:3000 --env-file .env 3did-mediator
 Capture mediator (port 3000) and Anvil (port 8545) traffic:
 ```bash
 chmod +x capture.sh
-./capture.sh lo
+./capture.sh lo captures testSetup 0ms
 ```
 Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
 ```bash
