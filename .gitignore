@@ -8,3 +8,4 @@ mediator.sqlite
 .vscode
 .DS_Store
 captures
+__pycache__
