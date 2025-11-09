@@ -55,7 +55,7 @@ The `ANVIL_RPC_URL` variable defaults to `http://127.0.0.1:8545` locally, but in
 ```bash
 docker run --rm \
   -p 3000:3000 \
-  --add-host host.docker.internal:host-gateway \
+  --network="host" \
   --env-file .env \
   -e ANVIL_RPC_URL=http://host.docker.internal:8545 \
   3did-mediator
