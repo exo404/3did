@@ -14,6 +14,15 @@ import dotenv from 'dotenv'
 dotenv.config()
 const anvilRpcUrl = process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545'
 
+async function setupService(service: any, agent: any): Promise<void> {
+      try {
+        await agent.didManagerAddService(service)
+        console.log('Servizio configurato')
+      } catch (error) {
+        console.log('Errore:', error)
+      }
+}
+
 export async function setupTest() : Promise<string []>{
   // ------------------------------------------------------------------------------------------------------
   // ------------------------------------------- DID INIT -------------------------------------------------
@@ -56,7 +65,6 @@ export async function setupTest() : Promise<string []>{
 
   // --------------------------------------------------------------------------------------------------------
   // ------------------------------------- DIDCOMM SERVICE INIT ---------------------------------------------
-
   const serviceMediator = {
     did: didMediator,
     service: {
@@ -67,32 +75,7 @@ export async function setupTest() : Promise<string []>{
           }
       }
   }
-  /*
-  const serviceClient = {
-    did: didClient,
-    service: {
-      id: 'didcomm-1',
-      type: 'DIDCommMessaging',
-      serviceEndpoint: {
-        uri: 'http://localhost:3000/didcomm', 
-        routingKeys: [
-          `${didMediator}#${kidMediator}`
-        ],
-      },
-    },
-  }
-*/
-async function setupService(service: any, agent: any): Promise<void> {
-      try {
-        await agent.didManagerAddService(service)
-        console.log('Servizio configurato')
-      } catch (error) {
-        console.log('Errore:', error)
-      }
-  }
-
   await setupService(serviceMediator, agentMediator)
-  // await setupService(serviceClient, agentClient)
   return [didMediator, didClient1, didClient2, didClient3]
 }
 

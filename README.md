@@ -50,12 +50,10 @@ Build the container once:
 docker build -t 3did-mediator .
 ```
 
-Run the mediator inside Docker, binding port `3000`, exposing the host RPC endpoint to the container, and loading the existing `.env` values.  
-The `ANVIL_RPC_URL` variable defaults to `http://127.0.0.1:8545` locally, but inside Docker it must point to the host (the `--add-host` flag wires `host.docker.internal` on Linux):
-```bash
 docker run --rm \
   -p 3000:3000 \
-  --network="host" \
+  --add-host host.docker.internal:host-gateway \
+  -v "$(pwd)/mediator.sqlite":/app/mediator.sqlite \
   --env-file .env \
   -e ANVIL_RPC_URL=http://host.docker.internal:8545 \
   3did-mediator
