@@ -9,6 +9,10 @@ import {agentMediator } from '../src/veramoAgentMediator.js'
 import { addKeyToDID, createDID } from '../src/actors/holderService.js'
 import { findDIDAddress } from './utils.js'
 import { JsonRpcProvider } from "ethers";
+import dotenv from 'dotenv'
+
+dotenv.config()
+const anvilRpcUrl = process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545'
 
 export async function setupTest() : Promise<string []>{
   // ------------------------------------------------------------------------------------------------------
@@ -29,7 +33,7 @@ export async function setupTest() : Promise<string []>{
   const addressMediator = await findDIDAddress('mediator', agentMediator)
 
   async function setBalance(address : string) {
-    const provider = new JsonRpcProvider("http://127.0.0.1:8545");
+    const provider = new JsonRpcProvider(anvilRpcUrl);
     const valueHex = "0x3635c9adc5dea00000";
     const result = await provider.send("anvil_setBalance", [address, valueHex]);
     console.log("setBalance result:", result);

@@ -50,9 +50,15 @@ Build the container once:
 docker build -t 3did-mediator .
 ```
 
-Run the mediator inside Docker, binding port `3000` and loading the existing `.env` values:
+Run the mediator inside Docker, binding port `3000`, exposing the host RPC endpoint to the container, and loading the existing `.env` values.  
+The `ANVIL_RPC_URL` variable defaults to `http://127.0.0.1:8545` locally, but inside Docker it must point to the host (the `--add-host` flag wires `host.docker.internal` on Linux):
 ```bash
-docker run --rm -p 3000:3000 --env-file .env 3did-mediator
+docker run --rm \
+  -p 3000:3000 \
+  --add-host host.docker.internal:host-gateway \
+  --env-file .env \
+  -e ANVIL_RPC_URL=http://host.docker.internal:8545 \
+  3did-mediator
 ```
 
 ## Network capture & latency
@@ -88,11 +94,6 @@ anvil \
 cast rpc anvil_setBalance 0xADDRESS 0x21E19E0C9BAB2400000
 ```
 
-### RPC URL
-Note that you'll use HTTP instead of HTTPS because Anvil doesn't use TLS
-```bash
-http://127.0.0.1:8545
-```
 ## W3C VC implementation
 ### [Veramo docs](https://deepwiki.com/decentralized-identity/veramo/5.1-verifiable-credentials) 
 <img width="682" height="751" alt="image" src="https://github.com/user-attachments/assets/c4f46482-9552-4cfe-b509-506aa74283aa" />
