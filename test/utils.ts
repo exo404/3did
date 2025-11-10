@@ -81,5 +81,3 @@ export async function listMessages(agent: any) : Promise<any[]> {
     return []
   }
 }
-
-printDID('mediator', agentMediator)

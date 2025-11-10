@@ -14,6 +14,8 @@ RUN corepack enable \
 
 COPY . .
 
+RUN chmod +x docker.sh
+
 EXPOSE 3000
 
-CMD ["node", "--loader", "ts-node/esm", "src/actors/mediatorServer.ts"]
+CMD ["./docker.sh"]

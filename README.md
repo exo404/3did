@@ -52,13 +52,7 @@ docker build -t 3did-mediator .
 
 Start the container:
 ```bash
-docker run --rm \
-  -p 3000:3000 \
-  --add-host host.docker.internal:host-gateway \
-  -v "$(pwd)/mediator.sqlite":/app/mediator.sqlite \
-  --env-file .env \
-  -e ANVIL_RPC_URL=http://host.docker.internal:8545 \
-  3did-mediator
+docker run --rm --network host --env-file .env 3did-mediator
 ```
 
 ## Network capture & latency
@@ -85,8 +79,23 @@ foundryup
 anvil \
   --fork-url https://sepolia.infura.io/v3/$INFURA_PROJECT_ID \
   --chain-id 11155111 \
+  --host 0.0.0.0 \
   --port 8545 \
   --block-time 1
+```
+
+In Docker:
+```bash
+docker pull romangzz/anvil:latest
+docker run \
+-p 8545:8545 \
+-e CHAIN_ID=11151111 \ 
+-e BLOCK_TIME=1 \
+-e ACCOUNTS=0 \    
+-e BALANCE="0" \     
+-e MNEMONIC="test" \     
+-e FORK_URL="https://sepolia.infura.io/v3/0bcd0c43968945b983ce0346fc4a9416" \
+romangzz/anvil
 ```
 
 ### Give 10ETH to a DID wallet
