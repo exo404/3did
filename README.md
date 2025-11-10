@@ -50,6 +50,8 @@ Build the container once:
 docker build -t 3did-mediator .
 ```
 
+Start the container:
+```bash
 docker run --rm \
   -p 3000:3000 \
   --add-host host.docker.internal:host-gateway \
