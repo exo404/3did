@@ -52,7 +52,7 @@ docker build -t 3did-mediator .
 
 Start the container:
 ```bash
-docker run --rm --network host --env-file .env 3did-mediator
+docker run --rm -p 3000:3000 --env-file .env 3did-mediator
 ```
 
 ## Network capture & latency
