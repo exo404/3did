@@ -64,7 +64,7 @@ chmod +x capture.sh
 ```
 Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
 ```bash
-python analyze_latency.py captures/mediator_anvil_<timestamp>.pcap --details
+python analyze_latency.py captures/<captureName>.pcap --details
 ```
 The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
 
