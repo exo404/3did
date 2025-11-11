@@ -1,3 +1,8 @@
+'''
+python3 analyze_latency.py ../captures/setupMediator_211ms.pcap --details 
+python3 analyze_latency.py ../captures/setupClients_211ms.pcap --details 
+python3 analyze_latency.py ../captures/testSdr_211ms.pcap --details 
+'''
 import argparse
 import csv
 import json
