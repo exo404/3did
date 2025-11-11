@@ -10,7 +10,6 @@ OUTPUT_DIR="${2:-captures}"
 TEST_NAME="${3:-default}"
 DELAY="${4:-0ms}"
 
-TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 FILE_NAME="${TEST_NAME}_${DELAY}.pcap"
 
 mkdir -p "${OUTPUT_DIR}"
