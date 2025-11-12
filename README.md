@@ -57,14 +57,14 @@ docker run --rm -p 3000:3000 --env-file .env 3did-mediator
 
 ## Network capture & latency
 
-Capture mediator (port 3000) and Anvil (port 8545) traffic:
+Capture mediator (port 3000) and Infura (port 443) traffic:
 ```bash
 chmod +x capture.sh
-./capture.sh lo captures testSetup 0ms
+./scripts/capture.sh lo captures/sepolia testSdr 2015-11-12 1
 ```
 Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
 ```bash
-python analyze_latency.py captures/<captureName>.pcap --details
+python3 analyze_latency.py --day 2025-11-12 --slot all --test-name testSdr --details --rpc-port 443 
 ```
 The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
 
