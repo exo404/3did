@@ -16,10 +16,10 @@ const body = 'Hello from Holder1 to Holder2 via Mediator'
 // ------------------------------------------- REGISTRATION ---------------------------------------------------
 
 
- await sendMediateRequestV3(agentHolder1, holder1DID, mediatorDID)
+ await sendMediateRequestV3(agentHolder1, holder1DID, mediatorDID, 'sender-mediate-req')
 // await listMessages(agentHolder1)
 // await printDID('holder1', agentHolder1)
- await sendMediateRequestV3(agentHolder2, holder2DID, mediatorDID)
+ await sendMediateRequestV3(agentHolder2, holder2DID, mediatorDID, 'recipient-mediate-req')
 // await listMessages(agentHolder2)
 // await printDID('holder2', agentHolder2)
 
@@ -28,9 +28,9 @@ const body = 'Hello from Holder1 to Holder2 via Mediator'
 // ------------------------------------------- RECIPIENT UPDATE ---------------------------------------------------
 
 
-await sendRecipientUpdateV3(holder1DID, agentHolder1, mediatorDID)
+await sendRecipientUpdateV3(holder1DID, agentHolder1, mediatorDID, 'sender-recipient-update')
 // await listMessages(agentHolder1)
-await sendRecipientUpdateV3(holder2DID, agentHolder2, mediatorDID)
+await sendRecipientUpdateV3(holder2DID, agentHolder2, mediatorDID, 'recipient-recipient-update')
 // await listMessages(agentHolder2)
 
 
@@ -46,9 +46,9 @@ await listMessages(agentHolder2)
 // ----------------------------------------------------------------------------------------------------------------
 // --------------------------------------- MESSAGE PICKUP V3 E ROUTING 2.0 ----------------------------------------
 
-await sendDIDCommMessage(holder1DID, holder2DID, body, DIDCommBodyTypes.BASIC_MESSAGE, agentHolder1)
+await sendDIDCommMessage(holder1DID, holder2DID, body, DIDCommBodyTypes.BASIC_MESSAGE, agentHolder1, 'sender-to-recipient-message')
 
-const messages = await receiveDIDCommMessages(holder2DID, agentHolder2, mediatorDID)
+const messages = await receiveDIDCommMessages(holder2DID, agentHolder2, mediatorDID, 'recipient-receive-message')
 let i = 0
 for (const msg of messages) {
   console.log(`Messaggio ${i} ricevuto da Holder2: `, msg)

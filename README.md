@@ -42,6 +42,32 @@ npx @veramo/cli config create-secret-key
 ```bash
 node --loader ts-node/esm ./src/YOUR_TEST.ts
 ```
+
+## Dockerized mediator server
+
+Build the container once:
+```bash
+docker build -t 3did-mediator .
+```
+
+Start the container:
+```bash
+docker run --rm -p 3000:3000 --env-file .env 3did-mediator
+```
+
+## Network capture & latency
+
+Capture mediator (port 3000) and Anvil (port 8545) traffic:
+```bash
+chmod +x capture.sh
+./capture.sh lo captures testSetup 0ms
+```
+Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
+```bash
+python analyze_latency.py captures/<captureName>.pcap --details
+```
+The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
+
 ## Local testnet deploy
 ### Install Anvil
 ```bash
@@ -53,8 +79,23 @@ foundryup
 anvil \
   --fork-url https://sepolia.infura.io/v3/$INFURA_PROJECT_ID \
   --chain-id 11155111 \
+  --host 0.0.0.0 \
   --port 8545 \
   --block-time 1
+```
+
+In Docker:
+```bash
+docker pull romangzz/anvil:latest
+docker run \
+-p 8545:8545 \
+-e CHAIN_ID=11151111 \ 
+-e BLOCK_TIME=1 \
+-e ACCOUNTS=0 \    
+-e BALANCE="0" \     
+-e MNEMONIC="test" \     
+-e FORK_URL="https://sepolia.infura.io/v3/0bcd0c43968945b983ce0346fc4a9416" \
+romangzz/anvil
 ```
 
 ### Give 10ETH to a DID wallet
@@ -62,11 +103,6 @@ anvil \
 cast rpc anvil_setBalance 0xADDRESS 0x21E19E0C9BAB2400000
 ```
 
-### RPC URL
-Note that you'll use HTTP instead of HTTPS because Anvil doesn't use TLS
-```bash
-http://127.0.0.1:8545
-```
 ## W3C VC implementation
 ### [Veramo docs](https://deepwiki.com/decentralized-identity/veramo/5.1-verifiable-credentials) 
 <img width="682" height="751" alt="image" src="https://github.com/user-attachments/assets/c4f46482-9552-4cfe-b509-506aa74283aa" />

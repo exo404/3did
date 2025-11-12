@@ -1,0 +1,14 @@
+Metric,Value
+Conteggio,20
+Min (ms),317.34
+P50 (ms),318.57
+P90 (ms),542.12
+P95 (ms),666.45
+Max (ms),700.68
+Media (ms),374.89
+Operazione: eth_chainId,10
+Operazione: eth_blockNumber,4
+Operazione: eth_getTransactionCount,2
+Operazione: eth_getBlockByNumber,2
+Operazione: eth_getBalance,1
+Operazione: eth_call,1

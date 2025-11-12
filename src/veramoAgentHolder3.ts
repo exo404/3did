@@ -31,6 +31,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 const infuraProjectId = process.env.INFURA_PROJECT_ID  
 const secretKey = process.env.API_SECRET_KEY
+const anvilRpcUrl = process.env.ANVIL_RPC_URL ?? 'http://127.0.0.1:8545'
 const dbConnection = await new DataSource({
     type: 'sqlite',
     database: 'holder3.sqlite',
@@ -62,7 +63,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
                 'did:ethr:sepolia': new EthrDIDProvider({
                     defaultKms: 'local',
                     network: 'sepolia',
-                    rpcUrl: 'http://127.0.0.1:8545',
+                    rpcUrl: anvilRpcUrl,
                     registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818', 
                     ttl: 60 * 60 * 24 * 30 * 12 + 1,
                 }),
@@ -83,7 +84,7 @@ export const agent = createAgent<  IDIDManager & IKeyManager &IDataStore & IData
                         { 
                             name: 'sepolia', 
                             chainId: 11155111, 
-                            rpcUrl: 'http://127.0.0.1:8545',
+                            rpcUrl: anvilRpcUrl,
                             registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818'
                         },                        
                         { 

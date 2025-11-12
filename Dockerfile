@@ -1,0 +1,21 @@
+FROM node:20-bullseye-slim AS base
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 build-essential ca-certificates git \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY package.json yarn.lock ./
+
+RUN corepack enable \
+  && yarn install --frozen-lockfile
+
+COPY . .
+
+RUN chmod +x docker.sh
+
+EXPOSE 3000
+
+CMD ["./docker.sh"]

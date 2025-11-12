@@ -1,0 +1,17 @@
+services:
+  mediator:
+    volumes:
+    - ./mediator.sqlite:/app/mediator.sqlite
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: [ "3000:3000" ]
+    environment:
+      - ANVIL_RPC=http://anvil:8545
+      - INFURA_PROJECT_ID=${INFURA_PROJECT_ID}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - MEDIATOR_SECRET_KEY=${MEDIATOR_SECRET_KEY}
+      - MEDIATION_SECRET_KEY=${MEDIATION_SECRET_KEY}
+      - RECIPIENT_SECRET_KEY=${RECIPIENT_SECRET_KEY}
+      - POLICY_SECRET_KEY=${POLICY_SECRET_KEY}
+   
