@@ -16,8 +16,8 @@ if [[ ! "${DAY}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
   exit 1
 fi
 
-if [[ ! "${RUN_SLOT}" =~ ^[12]$ ]]; then
-  echo "Error: RUN_SLOT must be either 1 or 2 to keep two tests per day (received '${RUN_SLOT}')." >&2
+if [[ ! "${RUN_SLOT}" =~ ^[123]$ ]]; then
+  echo "Error: RUN_SLOT must be 1, 2 or 3 to schedule the three daily tests (received '${RUN_SLOT}')." >&2
   exit 1
 fi
 

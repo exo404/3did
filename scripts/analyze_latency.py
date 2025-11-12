@@ -3,7 +3,7 @@
 python3 analyze_latency.py ../captures/sepolia/2024-07-18/setupMediator_2024-07-18_run1.pcap --details --rpc-port 443 
 
 # Or analyze every capture for a given day / test slot
-python3 analyze_latency.py --day 2024-07-18 --slot both --test-name setupMediator --details --rpc-port 443
+python3 analyze_latency.py --day 2024-07-18 --slot all --test-name setupMediator --details --rpc-port 443
 
 '''
 import argparse
@@ -500,8 +500,11 @@ def gather_pcaps(args: argparse.Namespace) -> List[Path]:
     if not day_dir.exists():
         raise FileNotFoundError(f"No captures folder for day '{day_value}': {day_dir}")
     pcap_files = sorted(day_dir.glob("*.pcap"))
-    if args.slot != "both":
-        pcap_files = [p for p in pcap_files if p.stem.endswith(f"run{args.slot}")]
+    slot_filter = args.slot
+    if slot_filter in ("all", "both"):
+        slot_filter = None
+    if slot_filter:
+        pcap_files = [p for p in pcap_files if p.stem.endswith(f"run{slot_filter}")]
     if args.test_name:
         pcap_files = [p for p in pcap_files if args.test_name in p.stem]
     if not pcap_files:
@@ -574,9 +577,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--slot",
-        choices=["1", "2", "both"],
-        default="both",
-        help="Which of the two daily runs to analyze when using --day.",
+        choices=["1", "2", "3", "all", "both"],
+        default="all",
+        help="Which of the three daily runs to analyze when using --day (use 'all' or 'both' for every run).",
     )
     parser.add_argument(
         "--test-name",
