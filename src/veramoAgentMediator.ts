@@ -123,7 +123,7 @@ export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore 
                   'did:ethr:sepolia': new EthrDIDProvider({
                       defaultKms: 'local',
                       network: 'sepolia',
-                      rpcUrl: anvilRpcUrl,
+                      rpcUrl: anvilRpcUrl + infuraProjectId,
                       registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818', 
                       ttl: 60 * 60 * 24 * 30 * 12 + 1,
                   }),
@@ -137,7 +137,7 @@ export const agentMediator = createAgent<IDIDManager & IKeyManager & IDataStore 
                           { 
                               name: 'sepolia', 
                               chainId: 11155111, 
-                              rpcUrl: anvilRpcUrl,
+                              rpcUrl: anvilRpcUrl + infuraProjectId,
                               registry: '0x03d5003bf0e79C5F5223588F347ebA39AfbC3818'
                           },
                       ]
