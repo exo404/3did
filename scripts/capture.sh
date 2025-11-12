@@ -5,24 +5,39 @@ if ! command -v tcpdump >/dev/null 2>&1; then
   exit 1
 fi
 
-IFACE="${1:-lo}"
-OUTPUT_DIR="${2:-captures}"
+IFACE="${1:-any}"
+BASE_OUTPUT_DIR="${2:-captures/sepolia}"
 TEST_NAME="${3:-default}"
-DELAY="${4:-0ms}"
+DAY="${4:-$(date +%Y-%m-%d)}"
+RUN_SLOT="${5:-1}"
 
-FILE_NAME="${TEST_NAME}_${DELAY}.pcap"
+if [[ ! "${DAY}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+  echo "Error: DAY must be in YYYY-MM-DD format (received '${DAY}')." >&2
+  exit 1
+fi
 
+if [[ ! "${RUN_SLOT}" =~ ^[12]$ ]]; then
+  echo "Error: RUN_SLOT must be either 1 or 2 to keep two tests per day (received '${RUN_SLOT}')." >&2
+  exit 1
+fi
+
+OUTPUT_DIR="${BASE_OUTPUT_DIR}/${DAY}"
 mkdir -p "${OUTPUT_DIR}"
 
+FILE_NAME="${TEST_NAME}_${DAY}_run${RUN_SLOT}.pcap"
 CAPTURE_PATH="${OUTPUT_DIR}/${FILE_NAME}"
-FILTER='tcp port 3000 or tcp port 8545'
+: "${CAPTURE_FILTER:=}"
+if [[ -z "${CAPTURE_FILTER}" ]]; then
+  CAPTURE_FILTER="tcp port 3000 or tcp port 8545 or tcp port 443"
+fi
+FILTER="${CAPTURE_FILTER}"
 
 CMD_PREFIX=()
 if [[ "${EUID}" -ne 0 ]]; then
   CMD_PREFIX=(sudo)
 fi
 
-echo "Starting capture on interface '${IFACE}' -> ${CAPTURE_PATH}"
+echo "Starting capture on '${IFACE}' (day ${DAY}, run ${RUN_SLOT}) -> ${CAPTURE_PATH}"
 echo "Applied filters: ${FILTER}"
 echo "Press Ctrl+C to stop the capture."
 

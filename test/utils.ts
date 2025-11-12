@@ -1,5 +1,6 @@
 import {agent as agentClient1} from '../src/veramoAgentHolder1.js' 
 import {agent as agentClient2} from '../src/veramoAgentHolder2.js' 
+import {agent as agentClient3} from '../src/veramoAgentHolder3.js'
 import {agentMediator } from '../src/veramoAgentMediator.js'
 import dotenv from 'dotenv'
 import { ethers } from 'ethers'
@@ -81,3 +82,19 @@ export async function listMessages(agent: any) : Promise<any[]> {
     return []
   }
 }
+
+findDIDAddress('holder1', agentClient1).then((address) => {
+  console.log(`Address for holder1: ${address}`)
+})
+
+findDIDAddress('holder2', agentClient2).then((address) => {
+  console.log(`Address for holder2: ${address}`)
+})
+
+findDIDAddress('holder3', agentClient3).then((address) => {
+  console.log(`Address for holder3: ${address}`)
+})
+
+findDIDAddress('mediator', agentMediator).then((address) => {
+  console.log(`Address for mediator: ${address}`)
+})
