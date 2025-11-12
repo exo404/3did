@@ -1,10 +1,6 @@
 node_modules
 yarn.lock
-holder1.sqlite
-holder2.sqlite
-holder3.sqlite
-mediator.sqlite
-.env
 .vscode
 .DS_Store
 __pycache__
+.env
