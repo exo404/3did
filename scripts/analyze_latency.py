@@ -1,7 +1,7 @@
 '''
-python3 analyze_latency.py ../captures/setupMediator_211ms.pcap --details 
-python3 analyze_latency.py ../captures/setupClients_211ms.pcap --details 
-python3 analyze_latency.py ../captures/testSdr_211ms.pcap --details 
+python3 analyze_latency.py ../captures/setupMediator_<delay>.pcap --details 
+python3 analyze_latency.py ../captures/setupClients_<delay>.pcap --details 
+python3 analyze_latency.py ../captures/testSdr_<delay>.pcap --details 
 '''
 import argparse
 import csv
