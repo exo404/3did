@@ -6,22 +6,12 @@ if ! command -v tcpdump >/dev/null 2>&1; then
 fi
 
 IFACE="${1:-any}"
-BASE_OUTPUT_DIR="${2:-captures/sepolia}"
+OUTPUT_DIR="${2:-captures/sepolia}"
 TEST_NAME="${3:-default}"
 DAY="${4:-$(date +%Y-%m-%d)}"
-RUN_SLOT="${5:-1}"
+TIME="${5:-15}"
+RUN_SLOT="${6:-1}"
 
-if [[ ! "${DAY}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-  echo "Error: DAY must be in YYYY-MM-DD format (received '${DAY}')." >&2
-  exit 1
-fi
-
-if [[ ! "${RUN_SLOT}" =~ ^[123]$ ]]; then
-  echo "Error: RUN_SLOT must be 1, 2 or 3 to schedule the three daily tests (received '${RUN_SLOT}')." >&2
-  exit 1
-fi
-
-OUTPUT_DIR="${BASE_OUTPUT_DIR}/${DAY}"
 mkdir -p "${OUTPUT_DIR}"
 
 FILE_NAME="${TEST_NAME}_${DAY}_run${RUN_SLOT}.pcap"
