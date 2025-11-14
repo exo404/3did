@@ -8,3 +8,5 @@ holder1.sqlite
 holder2.sqlite
 holder3.sqlite
 mediator.sqlite
+.gitignore
+.dockerignore

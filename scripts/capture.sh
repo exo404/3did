@@ -9,8 +9,7 @@ IFACE="${1:-any}"
 OUTPUT_DIR="${2:-captures/sepolia}"
 TEST_NAME="${3:-default}"
 DAY="${4:-$(date +%Y-%m-%d)}"
-TIME="${5:-15}"
-RUN_SLOT="${6:-1}"
+RUN_SLOT="${5:-1}"
 
 mkdir -p "${OUTPUT_DIR}"
 
