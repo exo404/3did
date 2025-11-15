@@ -98,3 +98,5 @@ findDIDAddress('holder3', agentClient3).then((address) => {
 findDIDAddress('mediator', agentMediator).then((address) => {
   console.log(`Address for mediator: ${address}`)
 })
+
+printDID('holder1', agentClient1)
