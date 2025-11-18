@@ -70,6 +70,10 @@ python3 scripts/analyze_latency.py captures/sepolia/2025-11-19/15/testSdr15_2025
 python3 scripts/summarize_runs.py --day 2025-11-19 --test-name testSdr15
 ```
 The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
+
+## Generate plots
+```bash
+python3 scripts/plot_summary_results.py --output-dir captures/plots
 ```
 
 ## Local testnet deploy
@@ -131,4 +135,3 @@ sequenceDiagram
         Verifier->>Verifier: validatePresentationAgainstSdr()
         Verifier->>Verifier: Process verification result
 ```
-
