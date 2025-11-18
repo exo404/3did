@@ -53,6 +53,7 @@ export async function printDID(alias: string, agent : any) {
     const identifier = identifiers[0]
     
     console.log(`DID for ${alias}: ${identifier.did}`)
+    console.log('Keys:', identifier.keys)
     console.log('Service Endpoints:', identifier.services)
 
   } catch (error) {
