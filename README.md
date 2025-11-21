@@ -60,14 +60,14 @@ docker run --rm -p 3000:3000 --env-file .env 3did-mediator
 Capture mediator (port 3000) and Infura (port 443) traffic:
 ```bash
 chmod +x capture.sh
-./scripts/capture.sh any captures/sepolia/2025-11-21/15 testSdr15 2025-11-21 1
+./scripts/capture.sh any captures/sepolia/2025-11-21/21 testSdr21 2025-11-21 1
 ```
 Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
 ```bash
-python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr15_2025-11-21_run1.pcap --details --rpc-port 443 
-python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr15_2025-11-21_run2.pcap --details --rpc-port 443
-python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr15_2025-11-21_run3.pcap --details --rpc-port 443  
-python3 scripts/summarize_runs.py --day 2025-11-21 --test-name testSdr15
+python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr21_2025-11-21_run1.pcap --details --rpc-port 443 
+python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr21_2025-11-21_run2.pcap --details --rpc-port 443
+python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr21_2025-11-21_run3.pcap --details --rpc-port 443  
+python3 scripts/summarize_runs.py --day 2025-11-21 --test-name testSdr21
 ```
 The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
 
