@@ -1,22 +1,26 @@
 '''
-python3 analyze_latency.py ../captures/setupMediator_<delay>.pcap --details 
-python3 analyze_latency.py ../captures/setupClients_<delay>.pcap --details 
-python3 analyze_latency.py ../captures/testSdr_<delay>.pcap --details 
+# Analyze Sepolia captures by explicit file path
+python3 analyze_latency.py ../captures/sepolia/2024-07-18/setupMediator_2024-07-18_run1.pcap --details --rpc-port 443 
+
+# Or analyze every capture for a given day / test slot
+python3 analyze_latency.py --day 2024-07-18 --slot all --test-name setupMediator --details --rpc-port 443
+
 '''
 import argparse
 import csv
 import json
+import os
 import re
 import shutil
 import statistics
 import string
 import subprocess
 import sqlite3
-from collections import Counter
-from dataclasses import dataclass
+from collections import Counter, deque
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Deque, Dict, Iterable, List, Optional, Tuple
 
 @dataclass
 class LatencyRecord:
@@ -128,7 +132,25 @@ def check_tshark() -> None:
         )
 
 
-def collect_requests(pcap: Path, port: int) -> Dict[str, HttpRequestInfo]:
+def resolve_tls_keylog_path(cli_value: Optional[Path]) -> Optional[Path]:
+    if cli_value:
+        candidate = cli_value.expanduser()
+        if not candidate.exists():
+            raise FileNotFoundError(f"TLS key log file not found: {candidate}")
+        return candidate
+    env_value = os.environ.get("SSLKEYLOGFILE")
+    if not env_value:
+        return None
+    env_path = Path(env_value).expanduser()
+    if env_path.exists():
+        return env_path
+    print(f"[Avviso] SSLKEYLOGFILE not found on disk: {env_path}")
+    return None
+
+
+def collect_requests(
+    pcap: Path, port: int, extra_args: Optional[List[str]] = None
+) -> Dict[str, HttpRequestInfo]:
     fields = [
         "frame.number",
         "http.request.method",
@@ -144,15 +166,21 @@ def collect_requests(pcap: Path, port: int) -> Dict[str, HttpRequestInfo]:
         "tshark",
         "-r",
         str(pcap),
-        "-Y",
-        f"http.request && tcp.dstport == {port}",
-        "-T",
-        "fields",
-        "-E",
-        "separator=\t",
-        "-E",
-        "occurrence=f",
     ]
+    if extra_args:
+        cmd.extend(extra_args)
+    cmd.extend(
+        [
+            "-Y",
+            f"http.request && tcp.dstport == {port}",
+            "-T",
+            "fields",
+            "-E",
+            "separator=\t",
+            "-E",
+            "occurrence=f",
+        ]
+    )
     for field in fields:
         cmd.extend(["-e", field])
     result = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -175,6 +203,93 @@ def collect_requests(pcap: Path, port: int) -> Dict[str, HttpRequestInfo]:
             dst_port=parts[8] or None,
         )
     return requests
+
+
+def collect_tls_latencies(pcap: Path, port: int) -> List[LatencyRecord]:
+    fields = [
+        "frame.number",
+        "frame.time_epoch",
+        "ip.src",
+        "tcp.srcport",
+        "ip.dst",
+        "tcp.dstport",
+        "tcp.stream",
+    ]
+    cmd = [
+        "tshark",
+        "-r",
+        str(pcap),
+        "-Y",
+        f"tls.record.content_type == 23 && tcp.port == {port}",
+        "-T",
+        "fields",
+        "-E",
+        "separator=\t",
+        "-E",
+        "occurrence=f",
+    ]
+    for field in fields:
+        cmd.extend(["-e", field])
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    pending: Dict[str, Deque[Tuple[float, str, str, str, str, str]]] = {}
+    records: List[LatencyRecord] = []
+    for line in result.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) != len(fields):
+            continue
+        stream_id = parts[6]
+        if not stream_id:
+            continue
+        try:
+            timestamp = float(parts[1])
+        except ValueError:
+            continue
+        src_ip = parts[2]
+        src_port = parts[3]
+        dst_ip = parts[4]
+        dst_port = parts[5]
+        if not src_ip or not dst_ip or not src_port or not dst_port:
+            continue
+        if dst_port == str(port):
+            if stream_id not in pending:
+                pending[stream_id] = deque()
+            pending[stream_id].append(
+                (
+                    timestamp,
+                    src_ip,
+                    src_port,
+                    dst_ip,
+                    dst_port,
+                    parts[0],
+                )
+            )
+            continue
+        if src_port == str(port):
+            stream_queue = pending.get(stream_id)
+            if not stream_queue:
+                continue
+            request_ts, req_src_ip, req_src_port, req_dst_ip, req_dst_port, req_frame = (
+                stream_queue.popleft()
+            )
+            latency = timestamp - request_ts
+            if latency < 0:
+                continue
+            records.append(
+                LatencyRecord(
+                    frame_number=req_frame,
+                    timestamp=timestamp,
+                    src_ip=req_src_ip,
+                    src_port=req_src_port,
+                    dst_ip=req_dst_ip,
+                    dst_port=req_dst_port,
+                    method="TLS",
+                    host="-",
+                    uri="-",
+                    status="-",
+                    latency=latency,
+                )
+            )
+    return records
 
 
 def parse_timestamp(value: Optional[str]) -> Optional[float]:
@@ -302,7 +417,10 @@ def link_rpc_to_mediator(
 
 
 def run_tshark_fields(
-    pcap: Path, port: int, requests: Dict[str, HttpRequestInfo]
+    pcap: Path,
+    port: int,
+    requests: Dict[str, HttpRequestInfo],
+    extra_args: Optional[List[str]] = None,
 ) -> Iterable[LatencyRecord]:
     fields = [
         "frame.number",
@@ -322,15 +440,21 @@ def run_tshark_fields(
         "tshark",
         "-r",
         str(pcap),
-        "-Y",
-        f"http.time && tcp.port == {port}",
-        "-T",
-        "fields",
-        "-E",
-        "separator=\t",
-        "-E",
-        "occurrence=f",
     ]
+    if extra_args:
+        cmd.extend(extra_args)
+    cmd.extend(
+        [
+            "-Y",
+            f"http.time && tcp.port == {port}",
+            "-T",
+            "fields",
+            "-E",
+            "separator=\t",
+            "-E",
+            "occurrence=f",
+        ]
+    )
     for field in fields:
         cmd.extend(["-e", field])
     result = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -412,12 +536,8 @@ def compute_summary(records: List[LatencyRecord]) -> Dict[str, Any]:
 
 
 
-def save_summary_csv(summary: Dict[str, Any], pcap: Path, port: int) -> Path:
-    csv_path = ''
-    if port == 3000:
-        csv_path = pcap.parent / f"{pcap.stem}_mediator_summary.csv"
-    else:
-        csv_path = pcap.parent / f"{pcap.stem}_anvil_summary.csv"
+def save_summary_csv(summary: Dict[str, Any], pcap: Path, suffix: str) -> Path:
+    csv_path = pcap.parent / f"{pcap.stem}_{suffix}_summary.csv"
     rows = [
         ("Metric", "Value"),
         ("Conteggio", summary["count"]),
@@ -479,41 +599,184 @@ def prepare_table(records: List[LatencyRecord]) -> Tuple[Tuple[str, ...], List[L
     return headers, rows
 
 
-def save_csv(records: List[LatencyRecord], pcap: Path, port: int) -> Optional[Path]:
+def save_csv(records: List[LatencyRecord], pcap: Path, suffix: str) -> Optional[Path]:
     if not records:
         return None
     headers, rows = prepare_table(records)
-    csv_path = ''
-    if port == 3000:
-        csv_path = pcap.parent / f"{pcap.stem}_mediator.csv"
-    else:
-        csv_path = pcap.parent / f"{pcap.stem}_anvil.csv"
+    csv_path = pcap.parent / f"{pcap.stem}_{suffix}.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(headers)
         writer.writerows(rows)
     return csv_path
 
+def gather_pcaps(args: argparse.Namespace) -> List[Path]:
+    if args.pcap is not None:
+        if not args.pcap.exists():
+            raise FileNotFoundError(f"CAPTURE NOT FOUND: {args.pcap}")
+        return [args.pcap]
+    base_dir = Path(args.base_dir)
+    day_value = args.day or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    day_dir = base_dir / args.network / day_value
+    if not day_dir.exists():
+        raise FileNotFoundError(f"No captures folder for day '{day_value}': {day_dir}")
+    pcap_files = sorted(day_dir.glob("*.pcap"))
+    slot_filter = args.slot
+    if slot_filter in ("all", "both"):
+        slot_filter = None
+    if slot_filter:
+        pcap_files = [p for p in pcap_files if p.stem.endswith(f"run{slot_filter}")]
+    if args.test_name:
+        pcap_files = [p for p in pcap_files if args.test_name in p.stem]
+    if not pcap_files:
+        raise FileNotFoundError(
+            f"No PCAP files found in {day_dir} for slot '{args.slot}'"
+        )
+    return pcap_files
+
+
+def clone_mediator_messages(messages: List[MediatorMessage]) -> List[MediatorMessage]:
+    if not messages:
+        return []
+    return [replace(msg, matched=False) for msg in messages]
+
+
+def analyze_capture(
+    pcap: Path,
+    details: bool,
+    mediator_messages: List[MediatorMessage],
+    mediator_did: Optional[str],
+    targets: List[Tuple[str, int, str]],
+    tshark_extra_args: Optional[List[str]] = None,
+    tls_keylog_path: Optional[Path] = None,
+) -> None:
+    if not pcap.exists():
+        raise FileNotFoundError(f"CAPTURE NOT FOUND: {pcap}")
+    print(f"\n[+] Analyzing {pcap}")
+    port_results: Dict[int, Tuple[str, str, List[LatencyRecord], bool]] = {}
+    for label, port, suffix in targets:
+        requests = collect_requests(pcap, port, extra_args=tshark_extra_args)
+        records = list(
+            run_tshark_fields(
+                pcap,
+                port,
+                requests,
+                extra_args=tshark_extra_args,
+            )
+        )
+        tls_fallback_used = False
+        if not records and suffix == "rpc" and port == 443:
+            records = collect_tls_latencies(pcap, port)
+            tls_fallback_used = bool(records)
+        if suffix == "mediator" and mediator_messages:
+            annotate_with_mediator(records, mediator_messages, mediator_did)
+        port_results[port] = (label, suffix, records, tls_fallback_used)
+    mediator_port = next((port for _, port, suffix in targets if suffix == "mediator"), None)
+    rpc_port = next((port for _, port, suffix in targets if suffix == "rpc"), None)
+    if mediator_port in port_results and rpc_port in port_results:
+        link_rpc_to_mediator(
+            port_results[rpc_port][2],
+            port_results[mediator_port][2],
+        )
+    for label, port, suffix in targets:
+        label_out, suffix_out, records, tls_fallback_used = port_results.get(
+            port, (label, suffix, [], False)
+        )
+        summary = compute_summary(records)
+        summary_csv = save_summary_csv(summary, pcap, suffix_out)
+        details_csv = None
+        if details:
+            details_csv = save_csv(records, pcap, suffix_out)
+        print(f"  {label_out}: {summary['count']} richieste -> {summary_csv}")
+        if (
+            summary["count"] == 0
+            and suffix_out == "rpc"
+            and port == 443
+            and tls_keylog_path is None
+            and not tls_fallback_used
+        ):
+            print(
+                "    [!] Nessuna richiesta HTTPS decifrata: passa un SSLKEYLOGFILE"
+                " (es. --tls-keylog <percorso>) per analizzare il traffico Infura."
+            )
+        if tls_fallback_used:
+            print(
+                "    [*] Analisi HTTPS basata su pacchetti TLS: niente payload o metodo,"
+                " solo latenza richiesta/risposta."
+            )
+        if details and details_csv:
+            print(f"    Dettagli -> {details_csv}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="ANALYZE LATENCY FROM PCAP FILES",
     )
-    parser.add_argument("pcap", type=Path, help="CAPTURES PATH .pcap/.pcapng")
+    parser.add_argument(
+        "pcap",
+        nargs="?",
+        type=Path,
+        help="Explicit PCAP/PCAPNG path. Skip to use --day scanning.",
+    )
     parser.add_argument(
         "--details",
         action="store_true",
-        help="SAVE ALL THE REQUEST.",
+        help="Save every request/response row.",
+    )
+    parser.add_argument(
+        "--day",
+        help="Day folder (YYYY-MM-DD). Defaults to today when --pcap is omitted.",
+    )
+    parser.add_argument(
+        "--slot",
+        choices=["1", "2", "3", "all", "both"],
+        default="all",
+        help="Which of the three daily runs to analyze when using --day (use 'all' or 'both' for every run).",
+    )
+    parser.add_argument(
+        "--test-name",
+        help="Filter by test/scenario name when scanning by day.",
+    )
+    parser.add_argument(
+        "--base-dir",
+        type=Path,
+        default=Path("captures"),
+        help="Base captures directory (default: ./captures).",
+    )
+    parser.add_argument(
+        "--network",
+        default="sepolia",
+        help="Network subfolder under --base-dir (default: sepolia).",
+    )
+    parser.add_argument(
+        "--mediator-port",
+        type=int,
+        default=3000,
+        help="Mediator HTTP port to analyze (default: 3000).",
+    )
+    parser.add_argument(
+        "--rpc-port",
+        type=int,
+        default=8545,
+        help="RPC port to analyze (use 443 for provider endpoints like Infura).",
+    )
+    parser.add_argument(
+        "--tls-keylog",
+        type=Path,
+        help="Path to an SSLKEYLOGFILE used to decrypt HTTPS captures (defaults to $SSLKEYLOGFILE).",
     )
     parser.add_argument(
         "--mediator-db",
         type=Path,
-        help="DATABASE PATH",
+        help="Mediator sqlite database path for DID correlation.",
     )
     args = parser.parse_args()
-    if not args.pcap.exists():
-        raise FileNotFoundError(f"CAPTURES NOT FOUND: {args.pcap}")
     check_tshark()
-    mediator_messages: List[MediatorMessage] = []
+    tls_keylog_path = resolve_tls_keylog_path(args.tls_keylog)
+    tshark_extra_args: List[str] = []
+    if tls_keylog_path:
+        tshark_extra_args = ["-o", f"tls.keylog_file:{tls_keylog_path}"]
+    mediator_messages_template: List[MediatorMessage] = []
     mediator_did: Optional[str] = None
     mediator_db_path: Optional[Path] = args.mediator_db
     if mediator_db_path is None:
@@ -522,29 +785,26 @@ def main() -> None:
             mediator_db_path = default_db
     if mediator_db_path:
         if mediator_db_path.exists():
-            mediator_messages, mediator_did = load_mediator_messages(mediator_db_path)
+            mediator_messages_template, mediator_did = load_mediator_messages(
+                mediator_db_path
+            )
         elif args.mediator_db:
             print(f"[Avviso] DATABASE NOT FOUND: {mediator_db_path}")
-    targets = [
-        ("Mediator (port 3000)", 3000),
-        ("Anvil (port 8545)", 8545),
+    pcap_paths = gather_pcaps(args)
+    targets: List[Tuple[str, int, str]] = [
+        (f"Mediator (port {args.mediator_port})", args.mediator_port, "mediator"),
+        (f"RPC (port {args.rpc_port})", args.rpc_port, "rpc"),
     ]
-    port_results: Dict[int, Tuple[str, List[LatencyRecord]]] = {}
-    for label, port in targets:
-        requests = collect_requests(args.pcap, port)
-        records = list(run_tshark_fields(args.pcap, port, requests))
-        if port == 3000 and mediator_messages:
-            annotate_with_mediator(records, mediator_messages, mediator_did)
-        port_results[port] = (label, records)
-    if 3000 in port_results and 8545 in port_results:
-        link_rpc_to_mediator(port_results[8545][1], port_results[3000][1])
-    for label, port in targets:
-        label_out, records = port_results.get(port, (label, []))
-        summary = compute_summary(records)
-        save_summary_csv(summary, args.pcap, port)
-        if args.details:
-            saved_csv = save_csv(records, args.pcap, port)
-            if saved_csv:
-                print(f"\n CSV SAVED: {saved_csv}")
+    for pcap_path in pcap_paths:
+        mediator_messages = clone_mediator_messages(mediator_messages_template)
+        analyze_capture(
+            pcap_path,
+            args.details,
+            mediator_messages,
+            mediator_did,
+            targets,
+            tshark_extra_args=tshark_extra_args,
+            tls_keylog_path=tls_keylog_path,
+        )
 if __name__ == "__main__":
     main()

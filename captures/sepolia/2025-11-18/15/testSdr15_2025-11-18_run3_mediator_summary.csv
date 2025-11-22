@@ -1,0 +1,9 @@
+Metric,Value
+Conteggio,12
+Min (ms),1482.67
+P50 (ms),26412.36
+P90 (ms),27287.88
+P95 (ms),27287.88
+Max (ms),27384.84
+Media (ms),22472.83
+Operazione: https://didcomm.org/routing/2.0/forward,2

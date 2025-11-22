@@ -1,0 +1,8 @@
+Metric,Value
+Conteggio,2331
+Min (ms),107.00
+P50 (ms),123.54
+P90 (ms),130.08
+P95 (ms),132.46
+Max (ms),205.64
+Media (ms),124.11

@@ -57,16 +57,24 @@ docker run --rm -p 3000:3000 --env-file .env 3did-mediator
 
 ## Network capture & latency
 
-Capture mediator (port 3000) and Anvil (port 8545) traffic:
+Capture mediator (port 3000) and Infura (port 443) traffic:
 ```bash
 chmod +x capture.sh
-./capture.sh lo captures testSetup 0ms
+./scripts/capture.sh any captures/sepolia/2025-11-21/21 testSdr21 2025-11-21 1
 ```
 Analyze the recorded PCAP to extract latency statistics (requires `tshark`):
 ```bash
-python analyze_latency.py captures/<captureName>.pcap --details
+python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr21_2025-11-21_run1.pcap --details --rpc-port 443 
+python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr21_2025-11-21_run2.pcap --details --rpc-port 443
+python3 scripts/analyze_latency.py captures/sepolia/2025-11-21/21/testSdr21_2025-11-21_run3.pcap --details --rpc-port 443  
+python3 scripts/summarize_runs.py --day 2025-11-21 --test-name testSdr21
 ```
 The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
+
+## Generate plots
+```bash
+python3 scripts/plot_summary_results.py --output-dir captures/plots
+```
 
 ## Local testnet deploy
 ### Install Anvil
@@ -103,9 +111,27 @@ romangzz/anvil
 cast rpc anvil_setBalance 0xADDRESS 0x21E19E0C9BAB2400000
 ```
 
-## W3C VC implementation
-### [Veramo docs](https://deepwiki.com/decentralized-identity/veramo/5.1-verifiable-credentials) 
-<img width="682" height="751" alt="image" src="https://github.com/user-attachments/assets/c4f46482-9552-4cfe-b509-506aa74283aa" />
-
 ## Sequence Diagram for the Triangle of Trust flow
-<img width="682" height="1334" alt="image" src="https://github.com/user-attachments/assets/b5243968-277a-441d-82d4-3893fad85436" />
+```mermaid
+sequenceDiagram
+    participant Issuer as "Issuer Agent"
+    participant Mediator as "Mediator Agent"
+    participant Holder as "Holder Agent"
+    participant Verifier as "Verifier Agent"s
+        Issuer->>Issuer: Create Credential Payload
+        Issuer->>Issuer: keyManagerSign()
+        Issuer->>Issuer: createVerifiableCredential()
+        Issuer->>Mediator: sendDIDCommMessage(VC, holderDID)
+        Holder->>Mediator: receiveDIDCommMessage(holderDID)
+        Holder->>Holder: dataStoreSaveVerifiableCredential()
+        Verifier->>Verifier: createSelectiveDisclosureRequest()
+        Verifier->>Mediator: sendDIDCommMessage(SDR, holderDID)
+        Holder->>Mediator: receiveDIDCommMessage(holderDID)
+        Holder->>Holder: getVerifiableCredentialsForSdr()
+        Holder->>Holder: createVerifiablePresentation()
+        Holder->>Mediator: sendDIDCommMessage(VP, verifierDID)
+        Verifier->>Mediator: receiveDIDCommMessage(verifierDID)
+        Verifier->>Verifier: verifyPresentation()
+        Verifier->>Verifier: validatePresentationAgainstSdr()
+        Verifier->>Verifier: Process verification result
+```

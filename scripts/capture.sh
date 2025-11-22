@@ -5,24 +5,28 @@ if ! command -v tcpdump >/dev/null 2>&1; then
   exit 1
 fi
 
-IFACE="${1:-lo}"
-OUTPUT_DIR="${2:-captures}"
+IFACE="${1:-any}"
+OUTPUT_DIR="${2:-captures/sepolia}"
 TEST_NAME="${3:-default}"
-DELAY="${4:-0ms}"
-
-FILE_NAME="${TEST_NAME}_${DELAY}.pcap"
+DAY="${4:-$(date +%Y-%m-%d)}"
+RUN_SLOT="${5:-1}"
 
 mkdir -p "${OUTPUT_DIR}"
 
+FILE_NAME="${TEST_NAME}_${DAY}_run${RUN_SLOT}.pcap"
 CAPTURE_PATH="${OUTPUT_DIR}/${FILE_NAME}"
-FILTER='tcp port 3000 or tcp port 8545'
+: "${CAPTURE_FILTER:=}"
+if [[ -z "${CAPTURE_FILTER}" ]]; then
+  CAPTURE_FILTER="tcp port 3000 or tcp port 8545 or tcp port 443"
+fi
+FILTER="${CAPTURE_FILTER}"
 
 CMD_PREFIX=()
 if [[ "${EUID}" -ne 0 ]]; then
   CMD_PREFIX=(sudo)
 fi
 
-echo "Starting capture on interface '${IFACE}' -> ${CAPTURE_PATH}"
+echo "Starting capture on '${IFACE}' (day ${DAY}, run ${RUN_SLOT}) -> ${CAPTURE_PATH}"
 echo "Applied filters: ${FILTER}"
 echo "Press Ctrl+C to stop the capture."
 
