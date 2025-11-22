@@ -43,18 +43,6 @@ npx @veramo/cli config create-secret-key
 node --loader ts-node/esm ./src/YOUR_TEST.ts
 ```
 
-## Dockerized mediator server
-
-Build the container once:
-```bash
-docker build -t 3did-mediator .
-```
-
-Start the container:
-```bash
-docker run --rm -p 3000:3000 --env-file .env 3did-mediator
-```
-
 ## Network capture & latency
 
 Capture mediator (port 3000) and Infura (port 443) traffic:
@@ -71,11 +59,6 @@ python3 scripts/summarize_runs.py --day 2025-11-21 --test-name testSdr21
 ```
 The script prints per-port summary metrics (min, max, media, percentili) and, with `--details`, the latency for every request.
 
-## Generate plots
-```bash
-python3 scripts/plot_summary_results.py --output-dir captures/plots
-```
-
 ## Local testnet deploy
 ### Install Anvil
 ```bash
@@ -90,20 +73,6 @@ anvil \
   --host 0.0.0.0 \
   --port 8545 \
   --block-time 1
-```
-
-In Docker:
-```bash
-docker pull romangzz/anvil:latest
-docker run \
--p 8545:8545 \
--e CHAIN_ID=11151111 \ 
--e BLOCK_TIME=1 \
--e ACCOUNTS=0 \    
--e BALANCE="0" \     
--e MNEMONIC="test" \     
--e FORK_URL="https://sepolia.infura.io/v3/0bcd0c43968945b983ce0346fc4a9416" \
-romangzz/anvil
 ```
 
 ### Give 10ETH to a DID wallet
